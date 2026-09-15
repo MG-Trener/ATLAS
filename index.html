@@ -6,7 +6,9 @@
   <meta name="theme-color" content="#f4f8fc" />
   <title>AMR Atlas — визуальный прототип</title>
   <meta name="description" content="AMR Atlas — прототип платформы мониторинга антимикробной резистентности" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <link rel="stylesheet" href="./preview.css" />
+  <link rel="stylesheet" href="./map.css" />
 </head>
 <body>
   <div class="shell">
@@ -39,7 +41,7 @@
         <strong>Научный мониторинг</strong>
         <p>Локальные данные, динамика резистентности и ранние сигналы AMR в одном интерфейсе.</p>
       </div>
-      <div class="side-footer">Казахстан · frontend prototype v0.2</div>
+      <div class="side-footer">Казахстан · frontend prototype v0.3</div>
     </aside>
 
     <main class="workspace">
@@ -97,24 +99,20 @@
             <div class="ab-row"><span>Меропенем</span><div><b>1,3</b><i><u style="width:3%" class="safe"></u></i></div><svg viewBox="0 0 100 30"><polyline points="0,20 18,19 34,20 50,18 68,19 84,18 100,17"/></svg><em>7 918</em></div>
           </article>
 
-          <article class="panel map-panel">
-            <div class="panel-head"><div><h2>Карта резистентности</h2><p>Цефтриаксон · Казахстан · 2026</p></div><select><option>Цефтриаксон</option><option>Ципрофлоксацин</option><option>Меропенем</option></select></div>
-            <div class="map-wrap">
-              <svg class="kz" viewBox="0 0 1000 550" aria-label="Схематичная карта Казахстана">
-                <defs><linearGradient id="kzg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#dff4f5"/><stop offset=".55" stop-color="#94d9e6"/><stop offset="1" stop-color="#3995cc"/></linearGradient></defs>
-                <path d="M80 242 L172 156 L292 176 L374 86 L492 107 L558 153 L705 123 L797 191 L919 202 L959 303 L870 343 L891 432 L758 465 L686 518 L542 466 L449 498 L338 452 L226 482 L150 413 L68 386 L98 315 Z" fill="url(#kzg)" stroke="#fff" stroke-width="7" />
-                <path d="M292 176 L338 452 M492 107 L449 498 M705 123 L686 518 M172 156 L226 482 M797 191 L758 465 M98 315 L891 343" fill="none" stroke="rgba(255,255,255,.72)" stroke-width="4"/>
-              </svg>
-              <div class="pin p1 cool"><i></i><span>ЗКО<b>14%</b></span></div>
-              <div class="pin p2 mid"><i></i><span>Актобе<b>21%</b></span></div>
-              <div class="pin p3 cool"><i></i><span>СКО<b>18%</b></span></div>
-              <div class="pin p4 mid"><i></i><span>Астана<b>28%</b></span></div>
-              <div class="pin p5 mid"><i></i><span>Караганда<b>26%</b></span></div>
-              <div class="pin p6 mid"><i></i><span>Павлодар<b>21%</b></span></div>
-              <div class="pin p7 hot"><i></i><span>ВКО<b>36%</b></span></div>
-              <div class="pin p8 cool"><i></i><span>Шымкент<b>20%</b></span></div>
-              <div class="pin p9 hot"><i></i><span>Алматы<b>33%</b></span></div>
-              <div class="legend"><span><i class="l1"></i>&lt;20%</span><span><i class="l2"></i>20–30%</span><span><i class="l3"></i>&gt;30%</span></div>
+          <article class="panel map-panel" id="map-section">
+            <div class="panel-head">
+              <div><h2>Интерактивная карта резистентности</h2><p id="map-caption">Цефтриаксон · Казахстан · 2026 · демонстрационные значения</p></div>
+              <select id="map-antibiotic"><option>Цефтриаксон</option><option>Ципрофлоксацин</option><option>Меропенем</option></select>
+            </div>
+            <div id="kazakhstan-map" aria-label="Интерактивная карта административных границ Казахстана"></div>
+            <div class="amr-map-toolbar">
+              <div class="amr-map-legend">
+                <span><i style="background:#76c8b2"></i>&lt;20%</span>
+                <span><i style="background:#58afd1"></i>20–30%</span>
+                <span><i style="background:#e6a94e"></i>30–40%</span>
+                <span><i style="background:#d95f67"></i>≥40%</span>
+              </div>
+              <div class="amr-map-source">Пробная геометрия: geoBoundaries ADM1 (2017) · hover и клик активны</div>
             </div>
           </article>
 
@@ -161,7 +159,7 @@
             <div class="quality-row"><span>Своевременность</span><i><u style="width:87%"></u></i><b>87%</b></div>
             <div class="quality-row"><span>Лабораторное покрытие</span><i><u style="width:76%"></u></i><b>76%</b></div>
             <div class="quality-row"><span>Соответствие стандартам</span><i><u style="width:94%"></u></i><b>94%</b></div>
-            <div class="source-box"><strong>Источник на этапе прототипа</strong><span>Демонстрационный набор. Далее — импорт WHONET.</span></div>
+            <div class="source-box"><strong>Источник на этапе прототипа</strong><span>Демонстрационные AMR-значения. Геометрия карты — geoBoundaries ADM1; далее — актуальные границы и импорт WHONET.</span></div>
           </article>
         </div>
 
@@ -170,12 +168,16 @@
     </main>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script>
     document.querySelectorAll('.nav-item').forEach((button) => {
       button.addEventListener('click', () => {
         document.querySelectorAll('.nav-item').forEach((item) => item.classList.remove('active'));
         button.classList.add('active');
         document.querySelector('.breadcrumb').innerHTML = `AMR Atlas <span>›</span> ${button.dataset.section}`;
+        if (button.dataset.section === 'Карта') {
+          document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       });
     });
 
@@ -187,5 +189,6 @@
       }
     });
   </script>
+  <script src="./map.js"></script>
 </body>
 </html>
