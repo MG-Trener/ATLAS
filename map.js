@@ -7,6 +7,7 @@
   const sourceLabel = document.querySelector('.amr-map-source');
 
   const sources = [
+    './regions.json',
     'https://cdn.jsdelivr.net/gh/galymorg/new_qazaqstan_GeoJSON@main/regions.json',
     'https://raw.githubusercontent.com/galymorg/new_qazaqstan_GeoJSON/main/regions.json',
   ];
@@ -19,6 +20,7 @@
 
   let regions = [];
   let view = { x: 0, y: 0, w: 620, h: 340 };
+  let selectedRegionName = '';
 
   const loading = document.createElement('div');
   loading.className = 'amr-map-loading';
@@ -78,7 +80,7 @@
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         if (!Array.isArray(data) || !data.length) throw new Error('Пустой набор регионов');
-        return data;
+        return { data, url };
       } catch (error) {
         lastError = error;
       }
@@ -103,11 +105,20 @@
         <div><span>Изоляты</span><strong>${stats.isolates.toLocaleString('ru-RU')}</strong></div>
         <div><span>Лаб.</span><strong>${stats.labs}</strong></div>
       </div>
-      <p>${direction} ${Math.abs(stats.delta).toFixed(1).replace('.', ',')} п.п. к условному базовому уровню. Данные демонстрационные.</p>`;
+      <p>${direction} ${Math.abs(stats.delta).toFixed(1).replace('.', ',')} п.п. к условному базовому уровню. Данные демонстрационные.</p>
+      <button class="region-apply-button" type="button">Применить регион ко всему обзору</button>`;
   }
 
   function applyViewBox(svg) {
     svg.setAttribute('viewBox', `${view.x} ${view.y} ${view.w} ${view.h}`);
+  }
+
+  function selectPathByRegion(name) {
+    selectedRegionName = name || '';
+    document.querySelectorAll('.atlas-region.selected').forEach((item) => item.classList.remove('selected'));
+    if (!selectedRegionName || selectedRegionName === 'Казахстан') return;
+    const path = [...document.querySelectorAll('.atlas-region')].find((item) => item.dataset.regionName === selectedRegionName);
+    path?.classList.add('selected');
   }
 
   function render() {
@@ -136,7 +147,9 @@
       path.setAttribute('d', region.path);
       path.setAttribute('fill', colorFor(stats.resistance));
       path.setAttribute('data-pcode', region.pcode || '');
+      path.dataset.regionName = region.name_kk || '';
       path.classList.add('atlas-region');
+      if (selectedRegionName === region.name_kk) path.classList.add('selected');
 
       path.addEventListener('pointerenter', (event) => {
         path.classList.add('hovered');
@@ -150,14 +163,18 @@
         tooltip.classList.remove('show');
       });
       path.addEventListener('click', () => {
-        document.querySelectorAll('.atlas-region.selected').forEach((item) => item.classList.remove('selected'));
-        path.classList.add('selected');
+        selectPathByRegion(region.name_kk);
         popup.innerHTML = popupHtml(region);
         popup.classList.add('show');
+        document.dispatchEvent(new CustomEvent('atlas:region-selected', {
+          detail: { name: region.name_kk, nameEn: region.name_en || '', pcode: region.pcode || '' },
+        }));
         popup.querySelector('.svg-popup-close')?.addEventListener('click', (event) => {
           event.stopPropagation();
           popup.classList.remove('show');
-          path.classList.remove('selected');
+        });
+        popup.querySelector('.region-apply-button')?.addEventListener('click', () => {
+          document.getElementById('region-filter')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
       });
 
@@ -208,21 +225,29 @@
   }
 
   function renderFallback() {
-    target.innerHTML = `<div class="amr-map-error">Не удалось загрузить интерактивные регионы. Показываю резервную карту.</div>
+    loading?.remove();
+    target.innerHTML = `<div class="amr-map-error">Интерактивные контуры временно недоступны. Используется резервное изображение карты.</div>
       <img class="atlas-map-fallback" alt="Карта регионов Казахстана" src="https://cdn.jsdelivr.net/gh/galymorg/new_qazaqstan_GeoJSON@main/kazakhstan-regions-map-accurate.svg">`;
   }
 
   loadRegions()
-    .then((data) => {
+    .then(({ data, url }) => {
       regions = data;
       loading.remove();
-      if (sourceLabel) sourceLabel.textContent = 'Пробная геометрия: административные границы 2024 · MIT · 17 областей + 3 города';
+      if (sourceLabel) sourceLabel.textContent = url.startsWith('./')
+        ? 'Локальная геометрия · 17 областей + 3 города · hover и клик активны'
+        : 'Пробная геометрия 2024 · 17 областей + 3 города · hover и клик активны';
       render();
+      document.dispatchEvent(new CustomEvent('atlas:map-ready', { detail: { regions } }));
     })
     .catch((error) => {
       console.error('AMR Atlas SVG map load failed:', error);
       renderFallback();
     });
+
+  document.addEventListener('atlas:dashboard-region-changed', (event) => {
+    selectPathByRegion(event.detail?.name || '');
+  });
 
   if (antibioticSelect) {
     antibioticSelect.addEventListener('change', () => {
