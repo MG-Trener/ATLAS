@@ -167,4 +167,13 @@
   });
 
   selectRegion('Казахстан', 'KZ');
+
+  if (!window.__atlasSectionsLoading) {
+    window.__atlasSectionsLoading = true;
+    const sectionsScript = document.createElement('script');
+    sectionsScript.src = './sections.js';
+    sectionsScript.onload = () => { window.__atlasSectionsLoaded = true; };
+    sectionsScript.onerror = () => { window.__atlasSectionsLoading = false; };
+    document.head.appendChild(sectionsScript);
+  }
 })();
