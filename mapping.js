@@ -33,13 +33,17 @@
   }
 
   function buildMapping(preview) {
-    if (!preview || preview.hidden || preview.dataset.mappingReady === '1') return;
+    if (!preview || preview.hidden) return;
     const table = preview.querySelector('table');
     if (!table) return;
     const headers = [...table.querySelectorAll('thead th')].map(th => th.textContent.trim());
     const values = [...table.querySelectorAll('tbody tr:first-child td')].map(td => td.textContent.trim());
     if (!headers.length) return;
-    preview.dataset.mappingReady = '1';
+
+    const signature = headers.join('|');
+    if (preview.dataset.mappingSignature === signature) return;
+    preview.dataset.mappingSignature = signature;
+    document.querySelector('.mapping-panel')?.remove();
 
     const panel = document.createElement('section');
     panel.className = 'adv-panel mapping-panel';
@@ -85,6 +89,7 @@
       status.textContent = requiredOk ? 'минимальные поля сопоставлены ✓' : 'нужно сопоставить обязательные поля';
       status.classList.toggle('ok', Boolean(requiredOk));
     }
+
     panel.querySelectorAll('select').forEach(sel => sel.addEventListener('change', update));
     update();
   }
