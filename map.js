@@ -2,6 +2,21 @@
   const target = document.getElementById('kazakhstan-map');
   if (!target) return;
 
+  const dashboardReady = new Promise((resolve) => {
+    if (window.__atlasDashboardLoaded) {
+      resolve();
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = './dashboard.js';
+    script.onload = () => {
+      window.__atlasDashboardLoaded = true;
+      resolve();
+    };
+    script.onerror = () => resolve();
+    document.head.appendChild(script);
+  });
+
   const antibioticSelect = document.getElementById('map-antibiotic');
   const caption = document.getElementById('map-caption');
   const sourceLabel = document.querySelector('.amr-map-source');
@@ -106,7 +121,7 @@
         <div><span>Лаб.</span><strong>${stats.labs}</strong></div>
       </div>
       <p>${direction} ${Math.abs(stats.delta).toFixed(1).replace('.', ',')} п.п. к условному базовому уровню. Данные демонстрационные.</p>
-      <button class="region-apply-button" type="button">Применить регион ко всему обзору</button>`;
+      <button class="region-apply-button" type="button">Регион применён ко всему обзору ✓</button>`;
   }
 
   function applyViewBox(svg) {
@@ -173,9 +188,6 @@
           event.stopPropagation();
           popup.classList.remove('show');
         });
-        popup.querySelector('.region-apply-button')?.addEventListener('click', () => {
-          document.getElementById('region-filter')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
       });
 
       svg.appendChild(path);
@@ -231,9 +243,10 @@
   }
 
   loadRegions()
-    .then(({ data, url }) => {
+    .then(async ({ data, url }) => {
       regions = data;
       loading.remove();
+      await dashboardReady;
       if (sourceLabel) sourceLabel.textContent = url.startsWith('./')
         ? 'Локальная геометрия · 17 областей + 3 города · hover и клик активны'
         : 'Пробная геометрия 2024 · 17 областей + 3 города · hover и клик активны';
