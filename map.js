@@ -7,6 +7,9 @@
   loading.textContent = 'Загрузка реальных границ Казахстана…';
   target.appendChild(loading);
 
+  const antibioticSelect = document.getElementById('map-antibiotic');
+  let geoLayer = null;
+
   const map = L.map(target, {
     zoomControl: true,
     attributionControl: true,
@@ -41,6 +44,12 @@
     'Almaty Region': 31.1,
   };
 
+  const antibioticProfiles = {
+    'Цефтриаксон': { factor: 1, offset: 0 },
+    'Ципрофлоксацин': { factor: 1.08, offset: 3.2 },
+    'Меропенем': { factor: 0.13, offset: -0.8 },
+  };
+
   const ruNames = {
     'Astana': 'Астана',
     'Almaty': 'Алматы',
@@ -60,15 +69,25 @@
     'Almaty Region': 'Алматинская область',
   };
 
+  function activeAntibiotic() {
+    return antibioticSelect?.value || 'Цефтриаксон';
+  }
+
   function fallbackValue(name) {
     let hash = 0;
     for (let i = 0; i < name.length; i += 1) hash = ((hash << 5) - hash) + name.charCodeAt(i);
     return 15 + (Math.abs(hash) % 210) / 10;
   }
 
-  function resistanceFor(name) {
+  function baseResistance(name) {
     if (Object.prototype.hasOwnProperty.call(demoOverrides, name)) return demoOverrides[name];
     return Number(fallbackValue(name).toFixed(1));
+  }
+
+  function resistanceFor(name) {
+    const base = baseResistance(name);
+    const profile = antibioticProfiles[activeAntibiotic()] || antibioticProfiles['Цефтриаксон'];
+    return Math.max(0.4, Math.min(72, Number((base * profile.factor + profile.offset).toFixed(1))));
   }
 
   function colorFor(value) {
@@ -88,8 +107,8 @@
 
   function statPack(name) {
     const resistance = resistanceFor(name);
-    const isolates = Math.round(1800 + resistance * 137);
-    const labs = Math.max(3, Math.round(resistance / 2.8));
+    const isolates = Math.round(1800 + baseResistance(name) * 137);
+    const labs = Math.max(3, Math.round(baseResistance(name) / 2.8));
     const delta = Number(((resistance - 24.5) / 4.3).toFixed(1));
     return { resistance, isolates, labs, delta };
   }
@@ -104,6 +123,26 @@
       fillColor: colorFor(stats.resistance),
       fillOpacity: 0.78,
     };
+  }
+
+  function tooltipHtml(display, stats) {
+    return `<div class="amr-region-tooltip"><strong>${display}</strong><span>${activeAntibiotic()} · R <b>${stats.resistance.toFixed(1).replace('.', ',')}%</b></span><span>Изолятов <b>${stats.isolates.toLocaleString('ru-RU')}</b></span></div>`;
+  }
+
+  function popupHtml(display, stats) {
+    const direction = stats.delta >= 0 ? '↑' : '↓';
+    const deltaAbs = Math.abs(stats.delta).toFixed(1).replace('.', ',');
+    return `
+      <div class="region-popup">
+        <span class="popup-kicker">E. coli · ${activeAntibiotic()} · демо</span>
+        <h3>${display}</h3>
+        <div class="popup-grid">
+          <div><span>R</span><strong>${stats.resistance.toFixed(1).replace('.', ',')}%</strong></div>
+          <div><span>Изоляты</span><strong>${stats.isolates.toLocaleString('ru-RU')}</strong></div>
+          <div><span>Лаб.</span><strong>${stats.labs}</strong></div>
+        </div>
+        <p>${direction} ${deltaAbs} п.п. к условному базовому уровню. Показатели пока демонстрационные.</p>
+      </div>`;
   }
 
   fetch(boundaryApi)
@@ -123,50 +162,35 @@
     .then((geojson) => {
       loading.remove();
 
-      const layer = L.geoJSON(geojson, {
+      geoLayer = L.geoJSON(geojson, {
         style: baseStyle,
         onEachFeature(feature, polygon) {
           const { raw, display } = regionName(feature);
-          const stats = statPack(raw);
-          const direction = stats.delta >= 0 ? '↑' : '↓';
-          const deltaAbs = Math.abs(stats.delta).toFixed(1).replace('.', ',');
-
-          polygon.bindTooltip(
-            `<div class="amr-region-tooltip"><strong>${display}</strong><span>Резистентность <b>${stats.resistance.toFixed(1).replace('.', ',')}%</b></span><span>Изолятов <b>${stats.isolates.toLocaleString('ru-RU')}</b></span></div>`,
-            { sticky: true, direction: 'top', className: 'amr-hover-tooltip' },
-          );
+          polygon.bindTooltip('', { sticky: true, direction: 'top', className: 'amr-hover-tooltip' });
 
           polygon.on({
             mouseover(event) {
               const current = event.target;
+              const stats = statPack(raw);
+              current.setTooltipContent(tooltipHtml(display, stats));
               current.setStyle({ weight: 3, color: '#174e72', fillOpacity: 0.92 });
               current.bringToFront();
             },
             mouseout(event) {
-              layer.resetStyle(event.target);
+              geoLayer.resetStyle(event.target);
             },
             click(event) {
-              const popup = `
-                <div class="region-popup">
-                  <span class="popup-kicker">E. coli · цефтриаксон · демо</span>
-                  <h3>${display}</h3>
-                  <div class="popup-grid">
-                    <div><span>R</span><strong>${stats.resistance.toFixed(1).replace('.', ',')}%</strong></div>
-                    <div><span>Изоляты</span><strong>${stats.isolates.toLocaleString('ru-RU')}</strong></div>
-                    <div><span>Лаб.</span><strong>${stats.labs}</strong></div>
-                  </div>
-                  <p>${direction} ${deltaAbs} п.п. к условному базовому уровню. Показатели пока демонстрационные.</p>
-                </div>`;
+              const stats = statPack(raw);
               L.popup({ maxWidth: 300, closeButton: true })
                 .setLatLng(event.latlng)
-                .setContent(popup)
+                .setContent(popupHtml(display, stats))
                 .openOn(map);
             },
           });
         },
       }).addTo(map);
 
-      map.fitBounds(layer.getBounds(), { padding: [18, 18] });
+      map.fitBounds(geoLayer.getBounds(), { padding: [18, 18] });
     })
     .catch((error) => {
       console.error('AMR Atlas map load failed:', error);
@@ -175,11 +199,12 @@
       map.setView([48.1, 67.2], 4);
     });
 
-  const antibioticSelect = document.getElementById('map-antibiotic');
   if (antibioticSelect) {
     antibioticSelect.addEventListener('change', () => {
       const caption = document.getElementById('map-caption');
       if (caption) caption.textContent = `${antibioticSelect.value} · Казахстан · 2026 · демонстрационные значения`;
+      map.closePopup();
+      if (geoLayer) geoLayer.setStyle(baseStyle);
     });
   }
 })();
