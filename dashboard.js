@@ -168,12 +168,35 @@
 
   selectRegion('Казахстан', 'KZ');
 
+  function loadAdvanced() {
+    if (window.__atlasAdvancedLoading || window.__atlasAdvancedLoaded) return;
+    window.__atlasAdvancedLoading = true;
+    const advancedScript = document.createElement('script');
+    advancedScript.src = './advanced.js';
+    advancedScript.onload = () => { window.__atlasAdvancedLoaded = true; };
+    advancedScript.onerror = () => { window.__atlasAdvancedLoading = false; };
+    document.head.appendChild(advancedScript);
+  }
+
   if (!window.__atlasSectionsLoading) {
     window.__atlasSectionsLoading = true;
     const sectionsScript = document.createElement('script');
     sectionsScript.src = './sections.js';
-    sectionsScript.onload = () => { window.__atlasSectionsLoaded = true; };
-    sectionsScript.onerror = () => { window.__atlasSectionsLoading = false; };
+    sectionsScript.onload = () => {
+      window.__atlasSectionsLoaded = true;
+      loadAdvanced();
+    };
+    sectionsScript.onerror = () => { window.__atlasSectionsLoading = false; loadAdvanced(); };
     document.head.appendChild(sectionsScript);
+  } else if (window.__atlasSectionsLoaded) {
+    loadAdvanced();
+  } else {
+    const wait = setInterval(() => {
+      if (window.__atlasSectionsLoaded) {
+        clearInterval(wait);
+        loadAdvanced();
+      }
+    }, 80);
+    setTimeout(() => { clearInterval(wait); loadAdvanced(); }, 3000);
   }
 })();
