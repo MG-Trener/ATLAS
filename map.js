@@ -1,93 +1,55 @@
 (() => {
   const target = document.getElementById('kazakhstan-map');
-  if (!target || typeof L === 'undefined') return;
-
-  const loading = document.createElement('div');
-  loading.className = 'amr-map-loading';
-  loading.textContent = 'Загрузка реальных границ Казахстана…';
-  target.appendChild(loading);
+  if (!target) return;
 
   const antibioticSelect = document.getElementById('map-antibiotic');
-  let geoLayer = null;
+  const caption = document.getElementById('map-caption');
+  const sourceLabel = document.querySelector('.amr-map-source');
 
-  const map = L.map(target, {
-    zoomControl: true,
-    attributionControl: true,
-    minZoom: 3,
-    maxZoom: 8,
-    scrollWheelZoom: false,
-    doubleClickZoom: true,
-    boxZoom: false,
-  });
-
-  map.attributionControl.setPrefix('');
-  map.attributionControl.addAttribution('Границы: geoBoundaries / OpenStreetMap');
-
-  const boundaryApi = 'https://www.geoboundaries.org/api/current/gbOpen/KAZ/ADM1/';
-
-  const demoOverrides = {
-    'Astana': 28.6,
-    'Almaty': 33.2,
-    'East Kazakhstan': 36.4,
-    'Karaganda': 26.1,
-    'Aktobe': 21.4,
-    'Pavlodar': 22.7,
-    'West Kazakhstan': 14.8,
-    'North Kazakhstan': 18.3,
-    'South Kazakhstan': 20.6,
-    'Akmola': 23.7,
-    'Atyrau': 19.2,
-    'Kostanay': 17.6,
-    'Kyzylorda': 25.4,
-    'Mangystau': 24.1,
-    'Zhambyl': 29.8,
-    'Almaty Region': 31.1,
-  };
+  const sources = [
+    'https://cdn.jsdelivr.net/gh/galymorg/new_qazaqstan_GeoJSON@main/regions.json',
+    'https://raw.githubusercontent.com/galymorg/new_qazaqstan_GeoJSON/main/regions.json',
+  ];
 
   const antibioticProfiles = {
     'Цефтриаксон': { factor: 1, offset: 0 },
-    'Ципрофлоксацин': { factor: 1.08, offset: 3.2 },
-    'Меропенем': { factor: 0.13, offset: -0.8 },
+    'Ципрофлоксацин': { factor: 1.12, offset: 2.8 },
+    'Меропенем': { factor: 0.16, offset: -1.2 },
   };
 
-  const ruNames = {
-    'Astana': 'Астана',
-    'Almaty': 'Алматы',
-    'East Kazakhstan': 'Восточно-Казахстанская область',
-    'Karaganda': 'Карагандинская область',
-    'Aktobe': 'Актюбинская область',
-    'Pavlodar': 'Павлодарская область',
-    'West Kazakhstan': 'Западно-Казахстанская область',
-    'North Kazakhstan': 'Северо-Казахстанская область',
-    'South Kazakhstan': 'Южно-Казахстанская область',
-    'Akmola': 'Акмолинская область',
-    'Atyrau': 'Атырауская область',
-    'Kostanay': 'Костанайская область',
-    'Kyzylorda': 'Кызылординская область',
-    'Mangystau': 'Мангистауская область',
-    'Zhambyl': 'Жамбылская область',
-    'Almaty Region': 'Алматинская область',
-  };
+  let regions = [];
+  let view = { x: 0, y: 0, w: 620, h: 340 };
+
+  const loading = document.createElement('div');
+  loading.className = 'amr-map-loading';
+  loading.textContent = 'Загрузка контуров регионов Казахстана…';
+  target.appendChild(loading);
+
+  const tooltip = document.createElement('div');
+  tooltip.className = 'svg-map-tooltip';
+  target.appendChild(tooltip);
+
+  const popup = document.createElement('div');
+  popup.className = 'svg-map-popup';
+  target.appendChild(popup);
 
   function activeAntibiotic() {
     return antibioticSelect?.value || 'Цефтриаксон';
   }
 
-  function fallbackValue(name) {
-    let hash = 0;
-    for (let i = 0; i < name.length; i += 1) hash = ((hash << 5) - hash) + name.charCodeAt(i);
-    return 15 + (Math.abs(hash) % 210) / 10;
+  function hash(input) {
+    let value = 0;
+    for (let i = 0; i < input.length; i += 1) value = ((value << 5) - value) + input.charCodeAt(i);
+    return Math.abs(value);
   }
 
-  function baseResistance(name) {
-    if (Object.prototype.hasOwnProperty.call(demoOverrides, name)) return demoOverrides[name];
-    return Number(fallbackValue(name).toFixed(1));
+  function baseResistance(region) {
+    return 14 + (hash(region.pcode || region.name_en || region.name_kk) % 230) / 10;
   }
 
-  function resistanceFor(name) {
-    const base = baseResistance(name);
+  function resistanceFor(region) {
     const profile = antibioticProfiles[activeAntibiotic()] || antibioticProfiles['Цефтриаксон'];
-    return Math.max(0.4, Math.min(72, Number((base * profile.factor + profile.offset).toFixed(1))));
+    return Math.max(0.5, Math.min(72, Number((baseResistance(region) * profile.factor + profile.offset).toFixed(1))));
   }
 
   function colorFor(value) {
@@ -97,114 +59,175 @@
     return '#76c8b2';
   }
 
-  function regionName(feature) {
-    const raw = feature?.properties?.shapeName || feature?.properties?.NAME_1 || 'Регион';
+  function statsFor(region) {
+    const resistance = resistanceFor(region);
+    const base = baseResistance(region);
     return {
-      raw,
-      display: ruNames[raw] || raw,
+      resistance,
+      isolates: Math.round(1200 + base * 155),
+      labs: Math.max(2, Math.round(base / 3.1)),
+      delta: Number(((resistance - 25) / 4.2).toFixed(1)),
     };
   }
 
-  function statPack(name) {
-    const resistance = resistanceFor(name);
-    const isolates = Math.round(1800 + baseResistance(name) * 137);
-    const labs = Math.max(3, Math.round(baseResistance(name) / 2.8));
-    const delta = Number(((resistance - 24.5) / 4.3).toFixed(1));
-    return { resistance, isolates, labs, delta };
+  async function loadRegions() {
+    let lastError;
+    for (const url of sources) {
+      try {
+        const response = await fetch(url, { cache: 'force-cache' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        if (!Array.isArray(data) || !data.length) throw new Error('Пустой набор регионов');
+        return data;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError || new Error('Не удалось получить карту');
   }
 
-  function baseStyle(feature) {
-    const { raw } = regionName(feature);
-    const stats = statPack(raw);
-    return {
-      color: '#ffffff',
-      weight: 1.5,
-      opacity: 1,
-      fillColor: colorFor(stats.resistance),
-      fillOpacity: 0.78,
-    };
+  function tooltipHtml(region) {
+    const stats = statsFor(region);
+    return `<strong>${region.name_kk}</strong><span>${activeAntibiotic()} · R <b>${stats.resistance.toFixed(1).replace('.', ',')}%</b></span><span>Изолятов <b>${stats.isolates.toLocaleString('ru-RU')}</b></span>`;
   }
 
-  function tooltipHtml(display, stats) {
-    return `<div class="amr-region-tooltip"><strong>${display}</strong><span>${activeAntibiotic()} · R <b>${stats.resistance.toFixed(1).replace('.', ',')}%</b></span><span>Изолятов <b>${stats.isolates.toLocaleString('ru-RU')}</b></span></div>`;
-  }
-
-  function popupHtml(display, stats) {
+  function popupHtml(region) {
+    const stats = statsFor(region);
     const direction = stats.delta >= 0 ? '↑' : '↓';
-    const deltaAbs = Math.abs(stats.delta).toFixed(1).replace('.', ',');
-    return `
-      <div class="region-popup">
-        <span class="popup-kicker">E. coli · ${activeAntibiotic()} · демо</span>
-        <h3>${display}</h3>
-        <div class="popup-grid">
-          <div><span>R</span><strong>${stats.resistance.toFixed(1).replace('.', ',')}%</strong></div>
-          <div><span>Изоляты</span><strong>${stats.isolates.toLocaleString('ru-RU')}</strong></div>
-          <div><span>Лаб.</span><strong>${stats.labs}</strong></div>
-        </div>
-        <p>${direction} ${deltaAbs} п.п. к условному базовому уровню. Показатели пока демонстрационные.</p>
-      </div>`;
+    return `<button class="svg-popup-close" aria-label="Закрыть">×</button>
+      <span class="popup-kicker">E. coli · ${activeAntibiotic()} · демо</span>
+      <h3>${region.name_kk}</h3>
+      <small>${region.name_en || ''}</small>
+      <div class="popup-grid">
+        <div><span>R</span><strong>${stats.resistance.toFixed(1).replace('.', ',')}%</strong></div>
+        <div><span>Изоляты</span><strong>${stats.isolates.toLocaleString('ru-RU')}</strong></div>
+        <div><span>Лаб.</span><strong>${stats.labs}</strong></div>
+      </div>
+      <p>${direction} ${Math.abs(stats.delta).toFixed(1).replace('.', ',')} п.п. к условному базовому уровню. Данные демонстрационные.</p>`;
   }
 
-  fetch(boundaryApi)
-    .then((response) => {
-      if (!response.ok) throw new Error(`geoBoundaries API HTTP ${response.status}`);
-      return response.json();
-    })
-    .then((metadata) => {
-      const geometryUrl = metadata.simplifiedGeometryGeoJSON || metadata.gjDownloadURL;
-      if (!geometryUrl) throw new Error('В ответе geoBoundaries отсутствует ссылка на GeoJSON');
-      return fetch(geometryUrl);
-    })
-    .then((response) => {
-      if (!response.ok) throw new Error(`GeoJSON HTTP ${response.status}`);
-      return response.json();
-    })
-    .then((geojson) => {
+  function applyViewBox(svg) {
+    svg.setAttribute('viewBox', `${view.x} ${view.y} ${view.w} ${view.h}`);
+  }
+
+  function render() {
+    target.querySelector('.atlas-svg-map')?.remove();
+    target.querySelector('.svg-map-controls')?.remove();
+    popup.classList.remove('show');
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.classList.add('atlas-svg-map');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Интерактивная карта регионов Казахстана');
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    applyViewBox(svg);
+
+    const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    background.setAttribute('x', '0');
+    background.setAttribute('y', '0');
+    background.setAttribute('width', '620');
+    background.setAttribute('height', '340');
+    background.setAttribute('fill', 'transparent');
+    svg.appendChild(background);
+
+    regions.forEach((region) => {
+      const stats = statsFor(region);
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', region.path);
+      path.setAttribute('fill', colorFor(stats.resistance));
+      path.setAttribute('data-pcode', region.pcode || '');
+      path.classList.add('atlas-region');
+
+      path.addEventListener('pointerenter', (event) => {
+        path.classList.add('hovered');
+        tooltip.innerHTML = tooltipHtml(region);
+        tooltip.classList.add('show');
+        moveTooltip(event);
+      });
+      path.addEventListener('pointermove', moveTooltip);
+      path.addEventListener('pointerleave', () => {
+        path.classList.remove('hovered');
+        tooltip.classList.remove('show');
+      });
+      path.addEventListener('click', () => {
+        document.querySelectorAll('.atlas-region.selected').forEach((item) => item.classList.remove('selected'));
+        path.classList.add('selected');
+        popup.innerHTML = popupHtml(region);
+        popup.classList.add('show');
+        popup.querySelector('.svg-popup-close')?.addEventListener('click', (event) => {
+          event.stopPropagation();
+          popup.classList.remove('show');
+          path.classList.remove('selected');
+        });
+      });
+
+      svg.appendChild(path);
+
+      if (region.cx && region.cy) {
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', region.cx);
+        label.setAttribute('y', region.cy);
+        label.setAttribute('text-anchor', 'middle');
+        label.classList.add('atlas-region-label');
+        label.textContent = `${Math.round(stats.resistance)}%`;
+        svg.appendChild(label);
+      }
+    });
+
+    const controls = document.createElement('div');
+    controls.className = 'svg-map-controls';
+    controls.innerHTML = '<button data-action="in" aria-label="Приблизить">+</button><button data-action="out" aria-label="Отдалить">−</button><button data-action="reset" aria-label="Сбросить масштаб">⌂</button>';
+    controls.addEventListener('click', (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      const action = button.dataset.action;
+      if (action === 'reset') view = { x: 0, y: 0, w: 620, h: 340 };
+      if (action === 'in') zoom(0.82);
+      if (action === 'out') zoom(1.22);
+      applyViewBox(svg);
+    });
+
+    target.insertBefore(svg, tooltip);
+    target.appendChild(controls);
+  }
+
+  function zoom(factor) {
+    const nextW = Math.max(260, Math.min(620, view.w * factor));
+    const nextH = nextW * 340 / 620;
+    const cx = view.x + view.w / 2;
+    const cy = view.y + view.h / 2;
+    view = { x: cx - nextW / 2, y: cy - nextH / 2, w: nextW, h: nextH };
+  }
+
+  function moveTooltip(event) {
+    const bounds = target.getBoundingClientRect();
+    const x = Math.min(bounds.width - 190, Math.max(10, event.clientX - bounds.left + 12));
+    const y = Math.min(bounds.height - 90, Math.max(10, event.clientY - bounds.top + 12));
+    tooltip.style.left = `${x}px`;
+    tooltip.style.top = `${y}px`;
+  }
+
+  function renderFallback() {
+    target.innerHTML = `<div class="amr-map-error">Не удалось загрузить интерактивные регионы. Показываю резервную карту.</div>
+      <img class="atlas-map-fallback" alt="Карта регионов Казахстана" src="https://cdn.jsdelivr.net/gh/galymorg/new_qazaqstan_GeoJSON@main/kazakhstan-regions-map-accurate.svg">`;
+  }
+
+  loadRegions()
+    .then((data) => {
+      regions = data;
       loading.remove();
-
-      geoLayer = L.geoJSON(geojson, {
-        style: baseStyle,
-        onEachFeature(feature, polygon) {
-          const { raw, display } = regionName(feature);
-          polygon.bindTooltip('', { sticky: true, direction: 'top', className: 'amr-hover-tooltip' });
-
-          polygon.on({
-            mouseover(event) {
-              const current = event.target;
-              const stats = statPack(raw);
-              current.setTooltipContent(tooltipHtml(display, stats));
-              current.setStyle({ weight: 3, color: '#174e72', fillOpacity: 0.92 });
-              current.bringToFront();
-            },
-            mouseout(event) {
-              geoLayer.resetStyle(event.target);
-            },
-            click(event) {
-              const stats = statPack(raw);
-              L.popup({ maxWidth: 300, closeButton: true })
-                .setLatLng(event.latlng)
-                .setContent(popupHtml(display, stats))
-                .openOn(map);
-            },
-          });
-        },
-      }).addTo(map);
-
-      map.fitBounds(geoLayer.getBounds(), { padding: [18, 18] });
+      if (sourceLabel) sourceLabel.textContent = 'Пробная геометрия: административные границы 2024 · MIT · 17 областей + 3 города';
+      render();
     })
     .catch((error) => {
-      console.error('AMR Atlas map load failed:', error);
-      loading.className = 'amr-map-error';
-      loading.textContent = 'Не удалось загрузить геометрию карты из geoBoundaries.';
-      map.setView([48.1, 67.2], 4);
+      console.error('AMR Atlas SVG map load failed:', error);
+      renderFallback();
     });
 
   if (antibioticSelect) {
     antibioticSelect.addEventListener('change', () => {
-      const caption = document.getElementById('map-caption');
-      if (caption) caption.textContent = `${antibioticSelect.value} · Казахстан · 2026 · демонстрационные значения`;
-      map.closePopup();
-      if (geoLayer) geoLayer.setStyle(baseStyle);
+      if (caption) caption.textContent = `${activeAntibiotic()} · Казахстан · 2026 · демонстрационные значения`;
+      if (regions.length) render();
     });
   }
 })();
