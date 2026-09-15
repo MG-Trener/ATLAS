@@ -2,6 +2,11 @@
   if (window.__atlasMappingLoaded) return;
   window.__atlasMappingLoaded = true;
 
+  const style = document.createElement('link');
+  style.rel = 'stylesheet';
+  style.href = './mapping.css';
+  document.head.appendChild(style);
+
   const normalize = (s) => String(s || '').trim().toUpperCase().replace(/\s+/g, '_');
   const candidates = {
     laboratory: ['LABORATORY','LAB','LAB_ID'],
