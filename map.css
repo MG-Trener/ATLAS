@@ -124,7 +124,7 @@
   right: 14px;
   bottom: 14px;
   display: none;
-  width: min(310px, calc(100% - 28px));
+  width: min(320px, calc(100% - 28px));
   padding: 14px;
   border: 1px solid #dce7ee;
   border-radius: 14px;
@@ -206,6 +206,18 @@
   line-height: 1.45;
 }
 
+.region-apply-button {
+  width: 100%;
+  margin-top: 11px;
+  padding: 9px 10px;
+  border: 1px solid #b9d9e6;
+  border-radius: 9px;
+  background: #edf8fb;
+  color: #236783;
+  font: 700 10px/1.2 system-ui, sans-serif;
+  cursor: default;
+}
+
 .amr-map-toolbar {
   display: flex;
   align-items: center;
@@ -274,6 +286,15 @@
   height: 100%;
   object-fit: contain;
   padding: 26px;
+}
+
+#region-filter {
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+#region-filter:focus {
+  border-color: #58afd1;
+  box-shadow: 0 0 0 3px rgba(88,175,209,.12);
 }
 
 @media (max-width: 900px) {
