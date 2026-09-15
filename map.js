@@ -1,0 +1,176 @@
+(() => {
+  const target = document.getElementById('kazakhstan-map');
+  if (!target || typeof L === 'undefined') return;
+
+  const loading = document.createElement('div');
+  loading.className = 'amr-map-loading';
+  loading.textContent = 'Загрузка реальных границ Казахстана…';
+  target.appendChild(loading);
+
+  const map = L.map(target, {
+    zoomControl: true,
+    attributionControl: true,
+    minZoom: 3,
+    maxZoom: 8,
+    scrollWheelZoom: false,
+    doubleClickZoom: true,
+    boxZoom: false,
+  });
+
+  map.attributionControl.setPrefix('');
+  map.attributionControl.addAttribution('Границы: geoBoundaries / OpenStreetMap');
+
+  const boundaryUrl = 'https://raw.githubusercontent.com/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/KAZ/ADM1/geoBoundaries-KAZ-ADM1_simplified.geojson';
+
+  const demoOverrides = {
+    'Astana': 28.6,
+    'Almaty': 33.2,
+    'East Kazakhstan': 36.4,
+    'Karaganda': 26.1,
+    'Aktobe': 21.4,
+    'Pavlodar': 22.7,
+    'West Kazakhstan': 14.8,
+    'North Kazakhstan': 18.3,
+    'South Kazakhstan': 20.6,
+    'Akmola': 23.7,
+    'Atyrau': 19.2,
+    'Kostanay': 17.6,
+    'Kyzylorda': 25.4,
+    'Mangystau': 24.1,
+    'Zhambyl': 29.8,
+    'Almaty Region': 31.1,
+  };
+
+  const ruNames = {
+    'Astana': 'Астана',
+    'Almaty': 'Алматы',
+    'East Kazakhstan': 'Восточно-Казахстанская область',
+    'Karaganda': 'Карагандинская область',
+    'Aktobe': 'Актюбинская область',
+    'Pavlodar': 'Павлодарская область',
+    'West Kazakhstan': 'Западно-Казахстанская область',
+    'North Kazakhstan': 'Северо-Казахстанская область',
+    'South Kazakhstan': 'Южно-Казахстанская область',
+    'Akmola': 'Акмолинская область',
+    'Atyrau': 'Атырауская область',
+    'Kostanay': 'Костанайская область',
+    'Kyzylorda': 'Кызылординская область',
+    'Mangystau': 'Мангистауская область',
+    'Zhambyl': 'Жамбылская область',
+    'Almaty Region': 'Алматинская область',
+  };
+
+  function fallbackValue(name) {
+    let hash = 0;
+    for (let i = 0; i < name.length; i += 1) hash = ((hash << 5) - hash) + name.charCodeAt(i);
+    return 15 + (Math.abs(hash) % 210) / 10;
+  }
+
+  function resistanceFor(name) {
+    if (Object.prototype.hasOwnProperty.call(demoOverrides, name)) return demoOverrides[name];
+    return Number(fallbackValue(name).toFixed(1));
+  }
+
+  function colorFor(value) {
+    if (value >= 40) return '#d95f67';
+    if (value >= 30) return '#e6a94e';
+    if (value >= 20) return '#58afd1';
+    return '#76c8b2';
+  }
+
+  function regionName(feature) {
+    const raw = feature?.properties?.shapeName || feature?.properties?.NAME_1 || 'Регион';
+    return {
+      raw,
+      display: ruNames[raw] || raw,
+    };
+  }
+
+  function statPack(name) {
+    const resistance = resistanceFor(name);
+    const isolates = Math.round(1800 + resistance * 137);
+    const labs = Math.max(3, Math.round(resistance / 2.8));
+    const delta = Number(((resistance - 24.5) / 4.3).toFixed(1));
+    return { resistance, isolates, labs, delta };
+  }
+
+  function baseStyle(feature) {
+    const { raw } = regionName(feature);
+    const stats = statPack(raw);
+    return {
+      color: '#ffffff',
+      weight: 1.5,
+      opacity: 1,
+      fillColor: colorFor(stats.resistance),
+      fillOpacity: 0.78,
+    };
+  }
+
+  fetch(boundaryUrl)
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    })
+    .then((geojson) => {
+      loading.remove();
+
+      const layer = L.geoJSON(geojson, {
+        style: baseStyle,
+        onEachFeature(feature, polygon) {
+          const { raw, display } = regionName(feature);
+          const stats = statPack(raw);
+          const direction = stats.delta >= 0 ? '↑' : '↓';
+          const deltaAbs = Math.abs(stats.delta).toFixed(1).replace('.', ',');
+
+          polygon.bindTooltip(
+            `<div class="amr-region-tooltip"><strong>${display}</strong><span>Резистентность <b>${stats.resistance.toFixed(1).replace('.', ',')}%</b></span><span>Изолятов <b>${stats.isolates.toLocaleString('ru-RU')}</b></span></div>`,
+            { sticky: true, direction: 'top', className: 'amr-hover-tooltip' },
+          );
+
+          polygon.on({
+            mouseover(event) {
+              const current = event.target;
+              current.setStyle({ weight: 3, color: '#174e72', fillOpacity: 0.92 });
+              current.bringToFront();
+            },
+            mouseout(event) {
+              layer.resetStyle(event.target);
+            },
+            click(event) {
+              const popup = `
+                <div class="region-popup">
+                  <span class="popup-kicker">E. coli · цефтриаксон · демо</span>
+                  <h3>${display}</h3>
+                  <div class="popup-grid">
+                    <div><span>R</span><strong>${stats.resistance.toFixed(1).replace('.', ',')}%</strong></div>
+                    <div><span>Изоляты</span><strong>${stats.isolates.toLocaleString('ru-RU')}</strong></div>
+                    <div><span>Лаб.</span><strong>${stats.labs}</strong></div>
+                  </div>
+                  <p>${direction} ${deltaAbs} п.п. к условному базовому уровню. Показатели пока демонстрационные.</p>
+                </div>`;
+              L.popup({ maxWidth: 300, closeButton: true })
+                .setLatLng(event.latlng)
+                .setContent(popup)
+                .openOn(map);
+            },
+          });
+        },
+      }).addTo(map);
+
+      map.fitBounds(layer.getBounds(), { padding: [18, 18] });
+    })
+    .catch((error) => {
+      console.error('AMR Atlas map load failed:', error);
+      loading.className = 'amr-map-error';
+      loading.textContent = 'Не удалось загрузить геометрию карты. Проверьте доступ к raw.githubusercontent.com.';
+      map.setView([48.1, 67.2], 4);
+    });
+
+  const antibioticSelect = document.getElementById('map-antibiotic');
+  if (antibioticSelect) {
+    antibioticSelect.addEventListener('change', () => {
+      const caption = document.getElementById('map-caption');
+      if (caption) caption.textContent = `${antibioticSelect.value} · Казахстан · 2026 · демонстрационные значения`;
+    });
+  }
+})();
