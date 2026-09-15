@@ -20,7 +20,7 @@
   map.attributionControl.setPrefix('');
   map.attributionControl.addAttribution('Границы: geoBoundaries / OpenStreetMap');
 
-  const boundaryUrl = 'https://raw.githubusercontent.com/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/KAZ/ADM1/geoBoundaries-KAZ-ADM1_simplified.geojson';
+  const boundaryApi = 'https://www.geoboundaries.org/api/current/gbOpen/KAZ/ADM1/';
 
   const demoOverrides = {
     'Astana': 28.6,
@@ -106,9 +106,18 @@
     };
   }
 
-  fetch(boundaryUrl)
+  fetch(boundaryApi)
     .then((response) => {
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) throw new Error(`geoBoundaries API HTTP ${response.status}`);
+      return response.json();
+    })
+    .then((metadata) => {
+      const geometryUrl = metadata.simplifiedGeometryGeoJSON || metadata.gjDownloadURL;
+      if (!geometryUrl) throw new Error('В ответе geoBoundaries отсутствует ссылка на GeoJSON');
+      return fetch(geometryUrl);
+    })
+    .then((response) => {
+      if (!response.ok) throw new Error(`GeoJSON HTTP ${response.status}`);
       return response.json();
     })
     .then((geojson) => {
@@ -162,7 +171,7 @@
     .catch((error) => {
       console.error('AMR Atlas map load failed:', error);
       loading.className = 'amr-map-error';
-      loading.textContent = 'Не удалось загрузить геометрию карты. Проверьте доступ к raw.githubusercontent.com.';
+      loading.textContent = 'Не удалось загрузить геометрию карты из geoBoundaries.';
       map.setView([48.1, 67.2], 4);
     });
 
