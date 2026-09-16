@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f4f8fc" />
+  <title>AMR Atlas — механизмы резистентности</title>
+  <meta name="description" content="Справочник механизмов антимикробной резистентности AMR Atlas" />
+  <link rel="stylesheet" href="./preview.css" />
+  <link rel="stylesheet" href="./preview-i18n.css" />
+  <link rel="stylesheet" href="./mechanisms.css?v=20260916-1" />
+</head>
+<body class="mechanism-page">
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand mechanism-brand" href="./index.html">
+        <div class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div><strong>AMR Atlas</strong><small data-i18n="brandSub">Данные сегодня.<br>Здоровье завтра.</small></div>
+      </a>
+      <nav class="nav mechanism-nav">
+        <a class="nav-item" href="./index.html"><span>⌂</span><span data-i18n="overview">Обзор</span></a>
+        <a class="nav-item" href="./reference.html"><span>◉</span><span data-i18n="reference">Справочники</span></a>
+        <a class="nav-item active" href="./mechanisms.html"><span>⌬</span><span data-i18n="mechanisms">Механизмы AMR</span></a>
+        <a class="nav-item" href="./index.html#map-section"><span>⌖</span><span data-i18n="map">Карта</span></a>
+      </nav>
+      <div class="side-spacer"></div>
+      <div class="side-callout mechanism-callout">
+        <strong data-i18n="scopeTitle">Назначение раздела</strong>
+        <p data-i18n="scopeText">Лабораторный и эпидемиологический AMR-контекст. Не предназначен для выбора терапии.</p>
+      </div>
+      <div class="side-footer">Supabase · AMR knowledge layer</div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar mechanism-topbar">
+        <div class="mechanism-status"><i></i><span data-i18n="liveDb">Supabase подключена</span></div>
+        <div class="top-actions">
+          <div class="language-switch" role="group" aria-label="Language">
+            <button type="button" data-lang="ru">RU</button>
+            <button type="button" data-lang="kk">KZ</button>
+            <button type="button" data-lang="en">EN</button>
+          </div>
+          <a class="back-reference" href="./reference.html" data-i18n="backReference">← К справочникам</a>
+        </div>
+      </header>
+
+      <section class="mechanism-content">
+        <div class="breadcrumb">AMR Atlas <span>›</span> <strong data-i18n="mechanisms">Механизмы AMR</strong></div>
+        <section class="mechanism-hero">
+          <div>
+            <span class="mechanism-eyebrow">AMR KNOWLEDGE GRAPH · SUPABASE</span>
+            <h1 data-i18n="title">Механизмы антимикробной резистентности</h1>
+            <p data-i18n="subtitle">Связи между механизмами, генетическими маркерами, микроорганизмами и лабораторными фенотипическими маркерами.</p>
+          </div>
+          <a id="hero-map-link" class="map-action" href="./index.html#map-section"><span>⌖</span><span data-i18n="openMap">Открыть на карте</span></a>
+        </section>
+
+        <section class="mechanism-kpis">
+          <article><span>⌬</span><div><small data-i18n="mechanismCount">Механизмов в базе</small><strong>11</strong><em>ESBL · KPC · NDM · OXA-48 · MRSA · VRE…</em></div></article>
+          <article><span>◉</span><div><small data-i18n="organismCount">Связанных приоритетных организмов</small><strong>7</strong><em>AMR surveillance context</em></div></article>
+          <article><span>◇</span><div><small data-i18n="agentCount">Фенотипических маркеров</small><strong>14</strong><em>WHONET antimicrobial codes</em></div></article>
+          <article><span>▦</span><div><small data-i18n="categoryCount">Категорий механизмов</small><strong>4</strong><em>enzyme · target · permeability</em></div></article>
+        </section>
+
+        <section class="mechanism-toolbar">
+          <label class="mechanism-search"><span>⌕</span><input id="mechanism-search" type="search" autocomplete="off" placeholder="Поиск механизма, гена, класса…" /></label>
+          <select id="mechanism-category"><option value="">Все категории</option></select>
+          <button id="clear-mechanism-filter" type="button" data-i18n="reset">Сбросить</button>
+        </section>
+
+        <section class="mechanism-layout">
+          <article class="mechanism-list-panel">
+            <div class="mechanism-list-head"><div><h2 data-i18n="catalog">Каталог механизмов</h2><p id="mechanism-summary">—</p></div></div>
+            <div id="mechanism-loading" class="mechanism-loading"><span></span><b data-i18n="loading">Загрузка механизмов из Supabase…</b></div>
+            <div id="mechanism-error" class="mechanism-error" hidden></div>
+            <div id="mechanism-list" class="mechanism-list" hidden></div>
+          </article>
+
+          <aside id="mechanism-detail" class="mechanism-detail">
+            <div class="mechanism-empty"><span>⌬</span><strong data-i18n="selectMechanism">Выберите механизм</strong><p data-i18n="selectHint">Справа появятся гены, связанные микроорганизмы и лабораторные маркеры.</p></div>
+          </aside>
+        </section>
+
+        <section class="mechanism-note"><span>i</span><div><strong data-i18n="noteTitle">Как использовать раздел</strong><p data-i18n="noteText">Механизмы и препараты здесь описаны для AMR-мониторинга и интерпретации лабораторного контекста. Они не являются рекомендацией по назначению лечения.</p></div></section>
+      </section>
+    </main>
+  </div>
+
+  <script src="./supabase-config.js"></script>
+  <script src="./mechanisms.js?v=20260916-1"></script>
+</body>
+</html>
