@@ -2,6 +2,10 @@
   'use strict';
   const map = document.getElementById('national-kz-map');
   if (!map) return;
+
+  const extraStyle=document.createElement('link');extraStyle.rel='stylesheet';extraStyle.href='./national-atlas-enhancements.css?v=20260916-1';document.head.appendChild(extraStyle);
+
+  const canvas=document.querySelector('.atlas-map-canvas');
   const tooltip = document.getElementById('national-map-tooltip');
   const layerCaption = document.getElementById('atlas-layer-caption');
   const modes = [...document.querySelectorAll('.atlas-mode-switch button')];
@@ -12,10 +16,12 @@
   const mdrEl = document.getElementById('atlas-mdr');
   const isolatesEl = document.getElementById('atlas-isolates');
   const signalEl = document.getElementById('atlas-signal');
+  const insightRail=document.querySelector('.atlas-insight-rail');
   let regions = [];
   let activeLayer = 'resistance';
   let activeLang = localStorage.getItem('atlas-preview-language') || 'ru';
   let selected = null;
+  let regionSelect=null, compareBox=null, rankingList=null;
 
   const names = {
     KZ10:['Абайская область','Абай облысы','Abay Region'],KZ11:['Акмолинская область','Ақмола облысы','Akmola Region'],KZ15:['Актюбинская область','Ақтөбе облысы','Aktobe Region'],KZ19:['Алматинская область','Алматы облысы','Almaty Region'],KZ23:['Атырауская область','Атырау облысы','Atyrau Region'],KZ27:['Западно-Казахстанская область','Батыс Қазақстан облысы','West Kazakhstan Region'],KZ31:['Жамбылская область','Жамбыл облысы','Zhambyl Region'],KZ33:['Жетысуская область','Жетісу облысы','Zhetysu Region'],KZ35:['Карагандинская область','Қарағанды облысы','Karaganda Region'],KZ39:['Костанайская область','Қостанай облысы','Kostanay Region'],KZ43:['Кызылординская область','Қызылорда облысы','Kyzylorda Region'],KZ47:['Мангистауская область','Маңғыстау облысы','Mangystau Region'],KZ55:['Павлодарская область','Павлодар облысы','Pavlodar Region'],KZ59:['Северо-Казахстанская область','Солтүстік Қазақстан облысы','North Kazakhstan Region'],KZ61:['Туркестанская область','Түркістан облысы','Turkistan Region'],KZ62:['Улытауская область','Ұлытау облысы','Ulytau Region'],KZ63:['Восточно-Казахстанская область','Шығыс Қазақстан облысы','East Kazakhstan Region'],KZ71:['Астана','Астана','Astana'],KZ75:['Алматы','Алматы','Almaty'],KZ79:['Шымкент','Шымкент','Shymkent']
@@ -23,6 +29,7 @@
   const langIndex = () => activeLang === 'kk' ? 1 : activeLang === 'en' ? 2 : 0;
   const displayName = r => names[r.pcode]?.[langIndex()] || r.name_kk || r.name_en || r.pcode;
   const locale = () => activeLang === 'kk' ? 'kk-KZ' : activeLang === 'en' ? 'en-US' : 'ru-RU';
+  const text=(ru,kk,en)=>activeLang==='kk'?kk:activeLang==='en'?en:ru;
   const hash = input => { let h=0; for (const ch of String(input)) h=((h<<5)-h)+ch.charCodeAt(0); return Math.abs(h); };
   const base = r => 17 + (hash(r.pcode) % 210) / 10;
   const layerValue = r => {
@@ -32,25 +39,74 @@
     if(activeLayer==='mrsa') return Math.max(2,Math.min(31,b*.48+1.7));
     return b;
   };
+  const nationalValue=()=>({resistance:29.8,esbl:18.4,cre:6.7,mrsa:14.2})[activeLayer]||29.8;
   const color = v => v>=34?'#d96c70':v>=26?'#d8a35c':v>=18?'#6caec5':'#9bcfc4';
   const pct = v => `${Number(v).toLocaleString(locale(),{minimumFractionDigits:1,maximumFractionDigits:1})}%`;
   const formatInt = v => Math.round(v).toLocaleString(locale());
   const layerLabel = () => ({resistance:['Резистентность','Төзімділік','Resistance'],esbl:['ESBL','ESBL','ESBL'],cre:['CRE','CRE','CRE'],mrsa:['MRSA','MRSA','MRSA']})[activeLayer][langIndex()];
-  const demoLabel = () => activeLang==='en'?'demo values':activeLang==='kk'?'демонстрациялық мәндер':'демонстрационные значения';
+  const demoLabel = () => text('демонстрационные значения','демонстрациялық мәндер','demo values');
+
+  function createExplorationUi(){
+    const story=document.querySelector('.atlas-story');
+    if(!story||document.querySelector('.atlas-region-browser'))return;
+    const browser=document.createElement('div');browser.className='atlas-region-browser';browser.innerHTML=`<label>${text('Быстрый переход к территории','Өңірге жылдам өту','Jump to territory')}</label><div class="atlas-region-browser-row"><select id="atlas-region-select"></select><button id="atlas-reset-region" type="button">${text('Вся страна','Бүкіл ел','Whole country')}</button></div>`;
+    document.querySelector('.atlas-mode-switch')?.insertAdjacentElement('afterend',browser);
+    regionSelect=browser.querySelector('select');
+    browser.querySelector('#atlas-reset-region')?.addEventListener('click',()=>updateSelected(null));
+
+    compareBox=document.createElement('article');compareBox.className='atlas-compare-card';document.querySelector('.atlas-selected-card')?.insertAdjacentElement('afterend',compareBox);
+
+    const controls=document.createElement('div');controls.className='atlas-map-controls2';controls.innerHTML=`<button type="button" data-map-action="labels">${text('Скрыть %','% жасыру','Hide %')}</button><button type="button" data-map-action="focus">${text('Фокус','Фокус','Focus')}</button><button type="button" data-map-action="reset">${text('Сбросить','Қалпына келтіру','Reset')}</button>`;canvas?.appendChild(controls);
+    controls.addEventListener('click',e=>{const btn=e.target.closest('button');if(!btn)return;const action=btn.dataset.mapAction;if(action==='labels'){canvas.classList.toggle('labels-off');btn.classList.toggle('active');btn.textContent=canvas.classList.contains('labels-off')?text('Показать %','% көрсету','Show %'):text('Скрыть %','% жасыру','Hide %')}if(action==='focus'){canvas.classList.toggle('focused');btn.classList.toggle('active')}if(action==='reset'){canvas.classList.remove('focused');updateSelected(null)}});
+
+    if(insightRail){const ranking=document.createElement('section');ranking.className='atlas-ranking';ranking.innerHTML=`<div class="atlas-ranking-head"><strong>${text('РЕЙТИНГ ТЕРРИТОРИЙ','ӨҢІРЛЕР РЕЙТИНГІ','TERRITORY RANKING')}</strong><span>${layerLabel()}</span></div><div class="atlas-ranking-list"></div>`;insightRail.appendChild(ranking);rankingList=ranking.querySelector('.atlas-ranking-list')}
+  }
+
+  function populateRegionSelect(){
+    if(!regionSelect)return;
+    const current=selected?.pcode||'';
+    regionSelect.innerHTML=`<option value="">${text('Казахстан — все территории','Қазақстан — барлық өңірлер','Kazakhstan — all territories')}</option>`;
+    regions.slice().sort((a,b)=>displayName(a).localeCompare(displayName(b),locale())).forEach(r=>regionSelect.add(new Option(displayName(r),r.pcode)));
+    regionSelect.value=current;
+    regionSelect.onchange=()=>updateSelected(regions.find(r=>r.pcode===regionSelect.value)||null);
+  }
+
+  function updateCompare(){
+    if(!compareBox)return;
+    const regionVal=selected?layerValue(selected):nationalValue();
+    const nat=nationalValue();
+    const sorted=regions.slice().sort((a,b)=>layerValue(b)-layerValue(a));
+    const median=sorted.length?layerValue(sorted[Math.floor(sorted.length/2)]):nat;
+    const rank=selected?sorted.findIndex(r=>r.pcode===selected.pcode)+1:null;
+    const completeness=selected?84+(hash(selected.pcode+'Q')%14):94;
+    const delta=regionVal-nat;
+    const max=Math.max(45,regionVal,nat,median)*1.08;
+    compareBox.innerHTML=`<div class="atlas-compare-title"><strong>${text('Сравнение с национальным уровнем','Ұлттық деңгеймен салыстыру','Compare with national level')}</strong><span>${layerLabel()}</span></div><div class="atlas-compare-bars"><div class="atlas-compare-row"><span>${selected?displayName(selected):text('Казахстан','Қазақстан','Kazakhstan')}</span><i><b style="width:${Math.min(100,regionVal/max*100)}%"></b></i><strong>${pct(regionVal)}</strong></div><div class="atlas-compare-row"><span>${text('Казахстан','Қазақстан','Kazakhstan')}</span><i><b style="width:${Math.min(100,nat/max*100)}%"></b></i><strong>${pct(nat)}</strong></div><div class="atlas-compare-row"><span>${text('Медиана регионов','Өңірлер медианасы','Regional median')}</span><i><b style="width:${Math.min(100,median/max*100)}%"></b></i><strong>${pct(median)}</strong></div></div><div class="atlas-compare-summary"><div><b>${rank?`${rank} / ${regions.length}`:'—'}</b><span>${text('место по слою','қабат бойынша орын','rank for layer')}</span></div><div><b>${selected?(delta>=0?'+':'')+delta.toLocaleString(locale(),{minimumFractionDigits:1,maximumFractionDigits:1})+' п.п.':'—'}</b><span>${text('к уровню страны','ел деңгейіне','vs country')}</span></div><div><b>${completeness}%</b><span>${text('полнота данных','деректер толықтығы','data completeness')}</span></div></div>`;
+  }
+
+  function updateRanking(){
+    if(!rankingList)return;
+    const top=regions.slice().sort((a,b)=>layerValue(b)-layerValue(a)).slice(0,5);
+    rankingList.innerHTML=top.map((r,i)=>`<div class="atlas-rank-row" data-pcode="${r.pcode}"><span>${i+1}</span><strong>${displayName(r)}</strong><b>${pct(layerValue(r))}</b></div>`).join('');
+    rankingList.querySelectorAll('.atlas-rank-row').forEach(row=>row.addEventListener('click',()=>updateSelected(regions.find(r=>r.pcode===row.dataset.pcode)||null)));
+    const head=document.querySelector('.atlas-ranking-head span');if(head)head.textContent=layerLabel();
+  }
 
   function updateSelected(r){
     selected=r;
     document.querySelectorAll('.atlas-region.selected').forEach(p=>p.classList.remove('selected'));
     if(r) document.querySelector(`.atlas-region[data-pcode="${r.pcode}"]`)?.classList.add('selected');
+    if(regionSelect)regionSelect.value=r?.pcode||'';
     if(!r){
-      regionCode.textContent='KZ'; regionName.textContent=activeLang==='en'?'Kazakhstan':activeLang==='kk'?'Қазақстан':'Казахстан';
-      rEl.textContent='29,8%'; mdrEl.textContent='12,4%'; isolatesEl.textContent='186 742';
-      signalEl.textContent=activeLang==='en'?'National demo profile. Select a region or city on the map.':activeLang==='kk'?'Ұлттық демонстрациялық профиль. Картадан облысты немесе қаланы таңдаңыз.':'Демонстрационный национальный профиль. Выберите область или город на карте.';
-      return;
+      regionCode.textContent='KZ'; regionName.textContent=text('Казахстан','Қазақстан','Kazakhstan');
+      rEl.textContent=pct(nationalValue()); mdrEl.textContent='12,4%'; isolatesEl.textContent='186 742';
+      signalEl.textContent=text('Демонстрационный национальный профиль. Выберите область или город на карте.','Ұлттық демонстрациялық профиль. Картадан облысты немесе қаланы таңдаңыз.','National demo profile. Select a region or city on the map.');
+      updateCompare();return;
     }
     const value=layerValue(r), b=base(r);
     regionCode.textContent=r.pcode; regionName.textContent=displayName(r); rEl.textContent=pct(value); mdrEl.textContent=pct(Math.max(3,b*.34)); isolatesEl.textContent=formatInt(1800+b*120);
-    signalEl.textContent = activeLang==='en' ? `${layerLabel()}: indicative regional profile. Demo data.` : activeLang==='kk' ? `${layerLabel()}: өңірлік индикативті профиль. Деректер демонстрациялық.` : `${layerLabel()}: индикативный региональный профиль. Данные демонстрационные.`;
+    signalEl.textContent = text(`${layerLabel()}: индикативный региональный профиль. Данные демонстрационные.`,`${layerLabel()}: өңірлік индикативті профиль. Деректер демонстрациялық.`,`${layerLabel()}: indicative regional profile. Demo data.`);
+    updateCompare();
   }
 
   function render(){
@@ -68,11 +124,13 @@
       if(r.cx&&r.cy){const label=document.createElementNS('http://www.w3.org/2000/svg','text');label.setAttribute('x',r.cx);label.setAttribute('y',r.cy);label.setAttribute('text-anchor','middle');label.classList.add('atlas-region-label');label.textContent=`${Math.round(value)}%`;map.appendChild(label)}
     });
     layerCaption.textContent=`${layerLabel()} · ${demoLabel()}`;
+    updateRanking();
   }
-  function moveTooltip(e){const bounds=document.querySelector('.atlas-map-canvas').getBoundingClientRect();tooltip.style.left=`${Math.min(bounds.width-190,Math.max(10,e.clientX-bounds.left+14))}px`;tooltip.style.top=`${Math.min(bounds.height-80,Math.max(10,e.clientY-bounds.top+14))}px`}
+  function moveTooltip(e){const bounds=canvas.getBoundingClientRect();tooltip.style.left=`${Math.min(bounds.width-190,Math.max(10,e.clientX-bounds.left+14))}px`;tooltip.style.top=`${Math.min(bounds.height-80,Math.max(10,e.clientY-bounds.top+14))}px`}
 
   modes.forEach(btn=>btn.addEventListener('click',()=>{modes.forEach(b=>b.classList.toggle('active',b===btn));activeLayer=btn.dataset.layer;render();updateSelected(selected)}));
-  langButtons.forEach((btn,i)=>btn.addEventListener('click',()=>{activeLang=['ru','kk','en'][i];localStorage.setItem('atlas-preview-language',activeLang);langButtons.forEach((b,j)=>b.classList.toggle('active',j===i));render();updateSelected(selected)}));
+  langButtons.forEach((btn,i)=>btn.addEventListener('click',()=>{activeLang=['ru','kk','en'][i];localStorage.setItem('atlas-preview-language',activeLang);langButtons.forEach((b,j)=>b.classList.toggle('active',j===i));populateRegionSelect();render();updateSelected(selected)}));
   langButtons.forEach((b,i)=>b.classList.toggle('active',['ru','kk','en'][i]===activeLang));
-  fetch('./regions.json').then(r=>r.json()).then(data=>{regions=data;render();updateSelected(null)}).catch(()=>{map.outerHTML='<div style="padding:80px;text-align:center;color:#7b9098">Карта временно недоступна</div>'});
+  createExplorationUi();
+  fetch('./regions.json').then(r=>r.json()).then(data=>{regions=data;populateRegionSelect();render();updateSelected(null)}).catch(()=>{map.outerHTML='<div style="padding:80px;text-align:center;color:#7b9098">Карта временно недоступна</div>'});
 })();
