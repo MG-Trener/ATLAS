@@ -13,13 +13,19 @@
     'Приобретённая mcr-опосредованная резистентность к колистину':'COL_MCR','Колистинге жүре пайда болған mcr арқылы төзімділік':'COL_MCR','Acquired mcr-mediated colistin resistance':'COL_MCR',
     'Порины и эффлюкс':'PORIN_EFFLUX','Пориндер және эффлюкс':'PORIN_EFFLUX','Porin loss and efflux':'PORIN_EFFLUX'
   };
-  const labels={ru:'Механизмы AMR',kk:'AMR механизмдері',en:'AMR mechanisms'};
+  const labels={
+    ru:{nav:'Механизмы AMR',open:'Открыть подробную карточку механизма'},
+    kk:{nav:'AMR механизмдері',open:'Механизмнің толық карточкасын ашу'},
+    en:{nav:'AMR mechanisms',open:'Open detailed mechanism card'}
+  };
   const language=()=>['ru','kk','en'].includes(localStorage.getItem('atlas-preview-language'))?localStorage.getItem('atlas-preview-language'):'ru';
   function enhance(){
-    const nav=document.getElementById('mechanisms-nav-label'); if(nav)nav.textContent=labels[language()];
+    const current=labels[language()]||labels.ru;
+    const nav=document.getElementById('mechanisms-nav-label'); if(nav)nav.textContent=current.nav;
     document.querySelectorAll('.amr-mechanism').forEach(card=>{
-      if(card.dataset.mechanismLinked)return;
       const title=card.querySelector('strong')?.textContent?.trim(); const code=names[title]; if(!code)return;
+      card.style.cursor='pointer'; card.title=current.open; card.setAttribute('aria-label',`${title}. ${current.open}`);
+      if(card.dataset.mechanismLinked)return;
       card.dataset.mechanismLinked=code; card.setAttribute('role','link'); card.setAttribute('tabindex','0');
       card.addEventListener('click',()=>{location.href=`./mechanisms.html?mechanism=${encodeURIComponent(code)}`;});
       card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();card.click();}});
