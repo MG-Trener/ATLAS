@@ -18,7 +18,11 @@ export default function AtlasGlobalNav() {
   return (
     <nav className={styles.dock} aria-label="Основная навигация AMR Atlas">
       {items.map(({ href, label, icon: Icon }) => {
-        const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+        const active = href === "/"
+          ? pathname === "/"
+          : href === "/insights"
+            ? pathname.startsWith("/insights") || pathname.startsWith("/regions/")
+            : pathname.startsWith(href);
         return <Link key={href} href={href} className={active ? styles.active : ""}><Icon size={15}/><span>{label}</span></Link>;
       })}
     </nav>
