@@ -23,11 +23,17 @@
   function refresh(){mount();const p=document.querySelector('.theme-popover');if(p&&!p.hidden)renderPopover()}
   function loadClinicalWorkbench(){
     if(pathConcept()!=='clinical'||document.querySelector('link[data-atlas-clinical]'))return;
-    const style=document.createElement('link');style.rel='stylesheet';style.href='./clinical-workspace.css?v=20260916-1';style.dataset.atlasClinical='1';document.head.appendChild(style);
-    const script=document.createElement('script');script.src='./clinical-workspace.js?v=20260916-1';script.dataset.atlasClinical='1';document.body.appendChild(script);
+    const style=document.createElement('link');style.rel='stylesheet';style.href='./clinical-workspace.css?v=20260916-2';style.dataset.atlasClinical='1';document.head.appendChild(style);
+    const script=document.createElement('script');script.src='./clinical-workspace.js?v=20260916-2';script.dataset.atlasClinical='1';document.body.appendChild(script);
   }
+  function loadViewportAssets(){
+    if(!pathConcept()||document.querySelector('link[data-atlas-viewport]'))return;
+    const style=document.createElement('link');style.rel='stylesheet';style.href='./viewport-layout.css?v=20260916-1';style.dataset.atlasViewport='1';document.head.appendChild(style);
+    const script=document.createElement('script');script.src='./viewport-layout.js?v=20260916-1';script.dataset.atlasViewport='1';document.body.appendChild(script);
+  }
+  function boot(){mount();loadClinicalWorkbench();loadViewportAssets()}
   selectConcept(current(),false);
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{mount();loadClinicalWorkbench()},{once:true});else{mount();loadClinicalWorkbench()}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
   document.addEventListener('atlas:language-changed',refresh);
   document.addEventListener('click',e=>{if(e.target.closest?.('[data-lang]'))setTimeout(refresh,0);const p=document.querySelector('.theme-popover');const tr=document.querySelector('.theme-trigger');if(!p||p.hidden||p.contains(e.target)||tr?.contains(e.target))return;p.hidden=true});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){const p=document.querySelector('.theme-popover');if(p)p.hidden=true}});
