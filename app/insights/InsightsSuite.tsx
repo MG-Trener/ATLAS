@@ -19,6 +19,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
+import KazakhstanRegionMap from "./KazakhstanRegionMap";
 import styles from "./insights.module.css";
 
 type Section = "map" | "analytics" | "compare" | "signals";
@@ -78,12 +79,6 @@ function linePoints(values: number[], width = 600, height = 180) {
   const min = Math.min(...values) - 2;
   const range = Math.max(1, max - min);
   return values.map((value, index) => `${(index / (values.length - 1)) * width},${height - ((value - min) / range) * height}`).join(" ");
-}
-
-function tone(value: number) {
-  if (value >= 32) return styles.hot;
-  if (value >= 25) return styles.warm;
-  return styles.cool;
 }
 
 export default function InsightsSuite() {
@@ -156,11 +151,8 @@ export default function InsightsSuite() {
           {section === "map" && (
             <section className={styles.mapLayout}>
               <article className={`${styles.panel} ${styles.mapPanel}`}>
-                <div className={styles.panelHead}><div><h2>Региональная картограмма</h2><p>Кликабельная аналитическая схема. Географические границы будут заменены на GeoJSON.</p></div><span className={styles.legend}><i className={styles.cool} /> &lt;25 <i className={styles.warm} /> 25–32 <i className={styles.hot} /> ≥32%</span></div>
-                <div className={styles.cartogram}>
-                  <svg viewBox="0 0 100 60" aria-hidden="true"><path d="M5 24 17 14 29 16 38 8 50 11 58 16 70 12 80 19 94 21 97 31 88 36 89 45 77 49 68 55 55 50 45 53 34 47 23 50 15 43 6 39 9 32Z" /></svg>
-                  {regionRows.map((item) => <button key={item.name} title={`${item.name}: ${item.resistance}% R`} className={`${styles.mapNode} ${tone(item.resistance)} ${selectedRegion === item.name ? styles.selectedNode : ""}`} style={{ left: `${item.x}%`, top: `${item.y}%` }} onClick={() => setSelectedRegion(item.name)}><b>{item.short}</b><span>{item.resistance}%</span></button>)}
-                </div>
+                <div className={styles.panelHead}><div><h2>Карта регионов Казахстана</h2><p>Административное деление 2024 · реальные контуры, упрощённые для веб-визуализации.</p></div><span className={styles.legend}><i className={styles.cool} /> &lt;25 <i className={styles.warm} /> 25–32 <i className={styles.hot} /> ≥32%</span></div>
+                <KazakhstanRegionMap regions={regionRows} selectedRegion={selectedRegion} onSelect={setSelectedRegion} />
               </article>
 
               <article className={styles.panel}>
