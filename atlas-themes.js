@@ -94,6 +94,7 @@
 
   document.addEventListener('atlas:language-changed', refreshLanguage);
   document.addEventListener('click', event => {
+    if (event.target.closest?.('[data-lang]')) setTimeout(refreshLanguage, 0);
     const popover = document.querySelector('.theme-popover');
     const trigger = document.querySelector('.theme-trigger');
     if (!popover || popover.hidden) return;
