@@ -25,7 +25,9 @@
   const exact=new Map();rows.forEach(r=>LANGS.forEach(l=>exact.set(String(r[l]).replace(/\s+/g,' ').trim(),r)));
   const partial=[];rows.forEach(r=>LANGS.forEach(l=>{if(r[l]&&r[l].length>=6)partial.push([r[l],r])}));partial.sort((a,b)=>b[0].length-a[0].length);
   const language=()=>{const v=localStorage.getItem(KEY);return LANGS.includes(v)?v:'ru'};
-  function translate(v){let out=String(v??''),lang=language();const hit=exact.get(out.replace(/\s+/g,' ').trim());if(hit)return hit[lang];for(const [source,row] of partial){if(out.includes(source))out=out.split(source).join(row[lang])}return out}
+  const isWordChar=v=>/[\p{L}\p{N}]/u.test(v||'');
+  function replaceFragment(value,source,target){let out='',cursor=0,match;while((match=value.indexOf(source,cursor))!==-1){const before=value[match-1]||'',after=value[match+source.length]||'';const inside=(isWordChar(source[0])&&isWordChar(before))||(isWordChar(source[source.length-1])&&isWordChar(after));out+=value.slice(cursor,match)+(inside?source:target);cursor=match+source.length}return out+value.slice(cursor)}
+  function translate(v){let out=String(v??''),lang=language();const hit=exact.get(out.replace(/\s+/g,' ').trim());if(hit)return hit[lang];for(const [source,row] of partial){if(out.includes(source))out=replaceFragment(out,source,row[lang])}return out}
   function nodeText(n){const p=n.parentElement;if(!p||p.closest('script,style,pre,code,[contenteditable="true"]'))return;const raw=n.nodeValue;if(!raw?.trim())return;const lead=raw.match(/^\s*/)?.[0]||'',tail=raw.match(/\s*$/)?.[0]||'',next=translate(raw.trim());if(next!==raw.trim())n.nodeValue=lead+next+tail}
   function apply(root=document.body){if(!root)return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode()))nodeText(n);root.querySelectorAll?.('[placeholder],[title],[aria-label]').forEach(el=>['placeholder','title','aria-label'].forEach(a=>{if(el.hasAttribute(a)){const v=el.getAttribute(a),x=translate(v);if(v!==x)el.setAttribute(a,x)}}))}
   let queued=false;function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;apply()})}
