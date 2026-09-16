@@ -31,6 +31,10 @@
     const loadExtensions=()=>{if(!window.__atlasI18nExtensions)loadScript('./atlas-i18n-extensions.js?v=20260916-1','i18n-extensions',()=>window.AtlasI18nExtensions?.apply?.())};
     if(window.AtlasGlobalI18n){window.AtlasGlobalI18n.applyLanguage?.();loadExtensions()}else loadScript('./atlas-global-i18n.js?v=20260916-1','global-i18n',()=>{window.AtlasGlobalI18n?.applyLanguage?.();loadExtensions()});
   }
+  function loadPlatformStatus(){
+    if(!document.querySelector('link[data-atlas-platform-status]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./platform-status.css?v=20260916-1';style.dataset.atlasPlatformStatus='1';document.head.appendChild(style)}
+    if(!window.AtlasPlatformStatus)loadScript('./platform-status.js?v=20260916-1','platform-status',()=>window.AtlasPlatformStatus?.render?.());else window.AtlasPlatformStatus.render?.();
+  }
   function loadClinicalWorkbench(){
     if(pathConcept()!=='clinical'||document.querySelector('link[data-atlas-clinical]'))return;
     const style=document.createElement('link');style.rel='stylesheet';style.href='./clinical-workspace.css?v=20260916-2';style.dataset.atlasClinical='1';document.head.appendChild(style);
@@ -62,10 +66,10 @@
     };
     if(window.AtlasAnalysisContext)afterContext();else loadScript('./analysis-context.js?v=20260916-2','analysis-context',afterContext);
   }
-  function boot(){mount();loadGlobalI18n();loadClinicalWorkbench();loadViewportAssets();loadReadableType();loadRegionalAnalysis()}
+  function boot(){mount();loadGlobalI18n();loadPlatformStatus();loadClinicalWorkbench();loadViewportAssets();loadReadableType();loadRegionalAnalysis()}
   selectConcept(current(),false);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-  document.addEventListener('atlas:language-changed',refresh);
+  document.addEventListener('atlas:language-changed',()=>{refresh();window.AtlasPlatformStatus?.render?.()});
   document.addEventListener('click',e=>{if(e.target.closest?.('[data-lang]'))setTimeout(refresh,0);const p=document.querySelector('.theme-popover');const tr=document.querySelector('.theme-trigger');if(!p||p.hidden||p.contains(e.target)||tr?.contains(e.target))return;p.hidden=true});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){const p=document.querySelector('.theme-popover');if(p)p.hidden=true}});
   window.AtlasThemes={concepts:[...CONCEPTS],get concept(){return current()},setConcept:selectConcept,setTheme:selectConcept};
