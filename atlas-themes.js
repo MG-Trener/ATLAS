@@ -3,11 +3,24 @@
 
   const STORAGE_KEY = 'atlas-ui-theme';
   const DEFAULT_THEME = 'clinical';
-  const THEMES = ['clinical','dark','teal','sand','contrast'];
+  const THEMES = ['clinical','research','command'];
+  const LEGACY_MAP = {dark:'command',teal:'clinical',sand:'research',contrast:'clinical'};
   const copy = {
-    ru:{button:'Скин',title:'Скин интерфейса',hint:'Выберите визуальную модель Atlas',selected:'Выбрано',themes:{clinical:['Clinical Light','Светлый медицинский'],dark:['Atlas Dark','Тёмный аналитический'],teal:['Laboratory Teal','Современный биотех'],sand:['Sand Report','Спокойный отчётный'],contrast:['High Contrast','Максимальная читаемость']}},
-    kk:{button:'Скин',title:'Интерфейс скині',hint:'Atlas визуалды моделін таңдаңыз',selected:'Таңдалды',themes:{clinical:['Clinical Light','Жарық медициналық'],dark:['Atlas Dark','Қараңғы аналитикалық'],teal:['Laboratory Teal','Заманауи биотех'],sand:['Sand Report','Тыныш есептік'],contrast:['High Contrast','Жоғары оқылымдылық']}},
-    en:{button:'Skin',title:'Interface skin',hint:'Choose an Atlas visual model',selected:'Selected',themes:{clinical:['Clinical Light','Light clinical'],dark:['Atlas Dark','Dark analytics'],teal:['Laboratory Teal','Modern biotech'],sand:['Sand Report','Calm report style'],contrast:['High Contrast','Maximum readability']}}
+    ru:{button:'Концепция',title:'Вариант интерфейса',hint:'Три разные модели отображения Atlas',selected:'Выбрано',themes:{
+      clinical:['Clinical Dashboard','Медицинская рабочая панель · боковая навигация'],
+      research:['Research Atlas','Научный портал · горизонтальная навигация · больше воздуха'],
+      command:['Command Center','Оперативный центр · тёмный · плотный · карта и сигналы']
+    }},
+    kk:{button:'Концепция',title:'Интерфейс нұсқасы',hint:'Atlas интерфейсінің үш түрлі моделі',selected:'Таңдалды',themes:{
+      clinical:['Clinical Dashboard','Медициналық жұмыс панелі · бүйірлік навигация'],
+      research:['Research Atlas','Ғылыми портал · көлденең навигация · кең макет'],
+      command:['Command Center','Жедел орталық · қараңғы · ықшам · карта және сигналдар']
+    }},
+    en:{button:'Concept',title:'Interface concept',hint:'Three distinct Atlas presentation models',selected:'Selected',themes:{
+      clinical:['Clinical Dashboard','Clinical workspace · sidebar navigation'],
+      research:['Research Atlas','Scientific portal · horizontal navigation · spacious layout'],
+      command:['Command Center','Operations center · dark · dense · map and alerts']
+    }}
   };
 
   const root = document.documentElement;
@@ -17,10 +30,20 @@
     return 'ru';
   };
   const t = () => copy[language()] || copy.ru;
-  const current = () => THEMES.includes(localStorage.getItem(STORAGE_KEY)) ? localStorage.getItem(STORAGE_KEY) : DEFAULT_THEME;
+
+  function normalizeStoredTheme() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (THEMES.includes(saved)) return saved;
+    if (LEGACY_MAP[saved]) {
+      localStorage.setItem(STORAGE_KEY, LEGACY_MAP[saved]);
+      return LEGACY_MAP[saved];
+    }
+    return DEFAULT_THEME;
+  }
+  const current = () => normalizeStoredTheme();
 
   function metaColor(theme) {
-    return ({clinical:'#f4f8fc',dark:'#09131f',teal:'#eef7f6',sand:'#f3efe7',contrast:'#ffffff'})[theme] || '#f4f8fc';
+    return ({clinical:'#f4f8fc',research:'#f7f5ef',command:'#07111b'})[theme] || '#f4f8fc';
   }
 
   function setTheme(theme, persist = true) {
