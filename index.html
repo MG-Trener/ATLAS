@@ -4,12 +4,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#f4f8fc" />
+  <script>try{document.documentElement.dataset.atlasTheme=localStorage.getItem('atlas-ui-theme')||'clinical'}catch(e){document.documentElement.dataset.atlasTheme='clinical'}</script>
   <title>AMR Atlas — визуальный прототип</title>
   <meta name="description" content="AMR Atlas — прототип платформы мониторинга антимикробной резистентности" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <link rel="stylesheet" href="./preview.css" />
   <link rel="stylesheet" href="./map.css" />
   <link rel="stylesheet" href="./preview-i18n.css" />
+  <link rel="stylesheet" href="./atlas-themes.css?v=20260916-1" />
 </head>
 <body>
   <div class="shell">
@@ -194,6 +196,7 @@
       }
     });
   </script>
+  <script src="./atlas-themes.js?v=20260916-1"></script>
   <script src="./preview-i18n.js"></script>
   <script src="./map.js"></script>
 </body>
