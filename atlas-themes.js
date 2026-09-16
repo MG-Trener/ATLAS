@@ -49,8 +49,11 @@
     if(!pathConcept())return;
     if(!document.querySelector('link[data-atlas-regional-analysis]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./regional-analysis.css?v=20260916-1';style.dataset.atlasRegionalAnalysis='1';document.head.appendChild(style)}
     const afterContext=()=>{
-      const afterData=()=>{if(window.__atlasRegionalAnalysis)return;loadScript('./regional-analysis.js?v=20260916-1','regional-analysis')};
-      if(window.AtlasDemoData)afterData();else loadScript('./amr-demo-data.js?v=20260916-1','demo-data',afterData);
+      const afterData=()=>{
+        const loadUnified=()=>{if(window.__atlasUnifiedAnalytics)return;loadScript('./unified-analytics.js?v=20260916-1','unified-analytics')};
+        if(window.__atlasRegionalAnalysis)loadUnified();else loadScript('./regional-analysis.js?v=20260916-1','regional-analysis',loadUnified);
+      };
+      if(window.AtlasDemoData)afterData();else loadScript('./amr-demo-data.js?v=20260916-2','demo-data',afterData);
     };
     if(window.AtlasAnalysisContext)afterContext();else loadScript('./analysis-context.js?v=20260916-2','analysis-context',afterContext);
   }
