@@ -32,7 +32,11 @@
     const tuning=document.createElement('link');tuning.rel='stylesheet';tuning.href='./viewport-tuning.css?v=20260916-1';tuning.dataset.atlasViewport='tuning';document.head.appendChild(tuning);
     const script=document.createElement('script');script.src='./viewport-layout.js?v=20260916-1';script.dataset.atlasViewport='1';document.body.appendChild(script);
   }
-  function boot(){mount();loadClinicalWorkbench();loadViewportAssets()}
+  function loadReadableType(){
+    if(document.querySelector('link[data-atlas-readable]'))return;
+    const style=document.createElement('link');style.rel='stylesheet';style.href='./atlas-readable-type.css?v=20260916-1';style.dataset.atlasReadable='1';document.head.appendChild(style);
+  }
+  function boot(){mount();loadClinicalWorkbench();loadViewportAssets();loadReadableType()}
   selectConcept(current(),false);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
   document.addEventListener('atlas:language-changed',refresh);
