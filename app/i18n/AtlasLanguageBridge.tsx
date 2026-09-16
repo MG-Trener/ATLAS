@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { AtlasLanguage, useAtlasLanguage } from "./AtlasLanguage";
+import { type AtlasLanguage, useAtlasLanguage } from "./AtlasLanguage";
 
 const PREVIEW_KEY = "atlas-preview-language";
 const APP_KEY = "atlas-language";
