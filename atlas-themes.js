@@ -28,7 +28,8 @@
   }
   function loadGlobalI18n(){
     if(!document.querySelector('link[data-atlas-global-i18n]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./atlas-global-i18n.css?v=20260916-1';style.dataset.atlasGlobalI18n='1';document.head.appendChild(style)}
-    if(!window.AtlasGlobalI18n)loadScript('./atlas-global-i18n.js?v=20260916-1','global-i18n',()=>window.AtlasGlobalI18n?.applyLanguage?.());
+    const loadExtensions=()=>{if(!window.__atlasI18nExtensions)loadScript('./atlas-i18n-extensions.js?v=20260916-1','i18n-extensions',()=>window.AtlasI18nExtensions?.apply?.())};
+    if(window.AtlasGlobalI18n){window.AtlasGlobalI18n.applyLanguage?.();loadExtensions()}else loadScript('./atlas-global-i18n.js?v=20260916-1','global-i18n',()=>{window.AtlasGlobalI18n?.applyLanguage?.();loadExtensions()});
   }
   function loadClinicalWorkbench(){
     if(pathConcept()!=='clinical'||document.querySelector('link[data-atlas-clinical]'))return;
