@@ -1,0 +1,266 @@
+/* AMR Atlas — readable typography layer
+   Principle: preserve compact layouts without using micro-text.
+   Desktop targets: body 14px, secondary 12px, labels 11px+, controls 12px+, metrics 18px+.
+*/
+
+:root{
+  --atlas-font-body:14px;
+  --atlas-font-secondary:12px;
+  --atlas-font-caption:11px;
+  --atlas-font-control:12px;
+  --atlas-font-panel-title:14px;
+  --atlas-line-body:1.45;
+}
+
+/* Shared navigation / concept picker */
+.theme-trigger{font-size:12px!important;min-height:34px}
+.theme-popover-head strong{font-size:15px!important;line-height:1.25}
+.theme-popover-head small{font-size:12px!important;line-height:1.4}
+.concept-copy strong{font-size:13px!important;line-height:1.3}
+.concept-copy small{font-size:12px!important;line-height:1.4;min-height:34px}
+.concept-copy>span{font-size:11px!important}
+.language-switch button,.atlas-language button{font-size:12px!important}
+
+/* Shared Clinical / Reference navigation */
+.sidebar .brand small{font-size:11px!important;line-height:1.4}
+.sidebar .nav-item{font-size:13px!important;line-height:1.25}
+.side-callout strong{font-size:12px!important}.side-callout p{font-size:12px!important;line-height:1.5}.side-footer{font-size:11px!important}
+.search input{font-size:13px!important}.search kbd{font-size:11px!important}
+.profile strong{font-size:12px!important}.profile small{font-size:11px!important}
+.breadcrumb{font-size:12px!important;line-height:1.35}
+
+/* Clinical Workspace */
+html[data-atlas-concept="clinical"] .page-head h1{font-size:24px!important;line-height:1.15}
+html[data-atlas-concept="clinical"] .page-head p{font-size:12px!important;line-height:1.4}
+html[data-atlas-concept="clinical"] .tag{font-size:11px!important}
+html[data-atlas-concept="clinical"] .btn{font-size:12px!important}
+html[data-atlas-concept="clinical"] .filters label>span{font-size:11px!important}
+html[data-atlas-concept="clinical"] .filters select,
+html[data-atlas-concept="clinical"] .filters button{font-size:12px!important}
+html[data-atlas-concept="clinical"] .stat span{font-size:11px!important}
+html[data-atlas-concept="clinical"] .stat strong{font-size:19px!important}
+html[data-atlas-concept="clinical"] .stat strong em{font-size:10px!important}
+html[data-atlas-concept="clinical"] .stat small{font-size:10.5px!important}
+html[data-atlas-concept="clinical"] .clinical-view-tabs button{font-size:12px!important}
+html[data-atlas-concept="clinical"] .clinical-view-tabs .clinical-view-hint{font-size:11px!important}
+html[data-atlas-concept="clinical"] .clinical-workbench-head h2{font-size:13px!important}
+html[data-atlas-concept="clinical"] .clinical-workbench-head p{font-size:11px!important}
+html[data-atlas-concept="clinical"] .clinical-workbench-head>span{font-size:10px!important}
+html[data-atlas-concept="clinical"] .clinical-task strong{font-size:12px!important;line-height:1.3}
+html[data-atlas-concept="clinical"] .clinical-task small{font-size:10.5px!important;line-height:1.3}
+html[data-atlas-concept="clinical"] .clinical-task code{font-size:10px!important}
+html[data-atlas-concept="clinical"] .clinical-task .status{font-size:10px!important}
+html[data-atlas-concept="clinical"] .clinical-task button{font-size:11px!important}
+html[data-atlas-concept="clinical"] .clinical-detail-strip{font-size:11px!important;line-height:1.45}
+html[data-atlas-concept="clinical"] .clinical-action strong{font-size:11.5px!important}
+html[data-atlas-concept="clinical"] .clinical-action small{font-size:10.5px!important;line-height:1.35}
+html[data-atlas-concept="clinical"] .clinical-data-health span,
+html[data-atlas-concept="clinical"] .clinical-data-health strong{font-size:10.5px!important}
+html[data-atlas-concept="clinical"] .panel-head h2{font-size:14px!important}
+html[data-atlas-concept="clinical"] .panel-head p{font-size:11px!important}
+html[data-atlas-concept="clinical"] .panel-head button,
+html[data-atlas-concept="clinical"] .panel-head select{font-size:11px!important}
+html[data-atlas-concept="clinical"] .ab-head{font-size:10.5px!important}
+html[data-atlas-concept="clinical"] .ab-row>span{font-size:12px!important}
+html[data-atlas-concept="clinical"] .ab-row>div b{font-size:11.5px!important}
+html[data-atlas-concept="clinical"] .ab-row em{font-size:10.5px!important}
+html[data-atlas-concept="clinical"] .alert-item strong{font-size:11.5px!important;line-height:1.3}
+html[data-atlas-concept="clinical"] .alert-item p{font-size:10.5px!important;line-height:1.4}
+html[data-atlas-concept="clinical"] .alert-item em{font-size:10px!important}
+html[data-atlas-concept="clinical"] .radar-status strong{font-size:11px!important}
+html[data-atlas-concept="clinical"] .radar-status small{font-size:10px!important}
+html[data-atlas-concept="clinical"] .y-axis,
+html[data-atlas-concept="clinical"] .x-axis{font-size:10px!important}
+html[data-atlas-concept="clinical"] .chart-legend{font-size:11px!important}
+html[data-atlas-concept="clinical"] .heat-table{font-size:11px!important}
+html[data-atlas-concept="clinical"] .quality-row,
+html[data-atlas-concept="clinical"] .source-box{font-size:11px!important;line-height:1.4}
+
+/* National AMR Atlas */
+.national-atlas-page .atlas-brand small{font-size:11px!important}
+.national-atlas-page .atlas-nav a{font-size:13px!important}
+.national-atlas-page .atlas-kicker{font-size:11px!important}
+.national-atlas-page .atlas-story h1{font-size:34px!important;line-height:1.04}
+.national-atlas-page .atlas-story>p{font-size:13px!important;line-height:1.5}
+.national-atlas-page .atlas-mode-switch button{font-size:12px!important}
+.national-atlas-page .atlas-region-browser label{font-size:11px!important}
+.national-atlas-page .atlas-region-browser-row select,
+.national-atlas-page .atlas-region-browser-row button{font-size:12px!important}
+.national-atlas-page .atlas-national-stats strong{font-size:18px!important}
+.national-atlas-page .atlas-national-stats span{font-size:10.5px!important}
+.national-atlas-page .selected-head span,.national-atlas-page .selected-head small{font-size:10.5px!important}
+.national-atlas-page .atlas-selected-card h2{font-size:19px!important}
+.national-atlas-page .selected-metrics strong{font-size:16px!important}
+.national-atlas-page .selected-metrics span{font-size:10.5px!important}
+.national-atlas-page .selected-signal p{font-size:11.5px!important;line-height:1.4}
+.national-atlas-page .atlas-compare-card{font-size:11px!important;line-height:1.35}
+.national-atlas-page .atlas-compare-title strong{font-size:11.5px!important}
+.national-atlas-page .atlas-map-title span{font-size:13px!important}
+.national-atlas-page .atlas-map-title small{font-size:11px!important}
+.national-atlas-page .atlas-region-label{font-size:9px!important}
+.national-atlas-page .national-map-tooltip{font-size:12px!important;line-height:1.4}
+.national-atlas-page .national-map-tooltip strong{font-size:13px!important}
+.national-atlas-page .atlas-map-legend{font-size:10.5px!important}
+.national-atlas-page .atlas-map-note{font-size:10.5px!important}
+.national-atlas-page .atlas-map-controls2 button{font-size:11px!important}
+.national-atlas-page .rail-label{font-size:10.5px!important}
+.national-atlas-page .atlas-insight-rail strong{font-size:12px!important}
+.national-atlas-page .atlas-insight-rail small{font-size:10.5px!important}
+.national-atlas-page .atlas-insight-rail b{font-size:11px!important}
+.national-atlas-page .atlas-insight-rail>a{font-size:11px!important}
+.national-atlas-page .atlas-ranking-head strong,
+.national-atlas-page .atlas-ranking-head span{font-size:10.5px!important}
+.national-atlas-page .atlas-rank-row{font-size:11px!important}
+.national-atlas-page .band-title span{font-size:12px!important}
+.national-atlas-page .band-title small,
+.national-atlas-page .band-pathogens span,
+.national-atlas-page .band-pathogens b,
+.national-atlas-page .band-trend>div{font-size:10px!important}
+
+/* AMR Intelligence Center */
+.command-page .command-title span{font-size:14px!important}
+.command-page .command-title small{font-size:10.5px!important}
+.command-page .command-statuses>span{font-size:10px!important}
+.command-page .rail-bottom small{font-size:9.5px!important}
+.command-page .command-kpis strong{font-size:21px!important}
+.command-page .command-kpis small{font-size:10px!important;letter-spacing:.07em}
+.command-page .command-kpis article>span{font-size:11px!important}
+.command-page .command-map-head span,
+.command-page .section-label{font-size:10px!important;letter-spacing:.1em}
+.command-page .command-map-head strong{font-size:12px!important}
+.command-page .command-layer-switch button{font-size:10.5px!important}
+.command-page .command-label{font-size:9px!important}
+.command-page .command-tooltip{font-size:11px!important;line-height:1.45}
+.command-page .command-tooltip strong{font-size:13px!important}
+.command-page .command-map-foot{font-size:9.5px!important}
+.command-page .command-alerts article>span{font-size:9.5px!important}
+.command-page .command-alerts strong{font-size:11.5px!important;line-height:1.25}
+.command-page .command-alerts p{font-size:10px!important;line-height:1.35}
+.command-page .command-alerts b{font-size:11px!important}
+.command-page .command-alerts>a{font-size:10.5px!important}
+.command-page .command-region-card h2{font-size:16px!important}
+.command-page .command-region-metrics span{font-size:9.5px!important}
+.command-page .command-region-metrics strong{font-size:13px!important}
+.command-page .command-region-card p{font-size:10.5px!important;line-height:1.35}
+.command-page .command-trend-labels{font-size:9.5px!important}
+.command-page .watch-row strong{font-size:11px!important}
+.command-page .watch-row span{font-size:9.5px!important}
+.command-page .watch-row b{font-size:9px!important}
+.command-page .command-event-live,
+.command-page .command-event-track,
+.command-page .command-event-toggle{font-size:9.5px!important}
+.command-page .command-threat-summary span{font-size:9px!important}
+.command-page .incident-head small{font-size:9.5px!important}
+.command-page .incident-head h2{font-size:19px!important}
+.command-page .incident-severity{font-size:9.5px!important}
+.command-page .incident-summary{font-size:12px!important;line-height:1.5}
+.command-page .incident-metrics span{font-size:9.5px!important}
+.command-page .incident-metrics strong{font-size:14px!important}
+.command-page .incident-section>span{font-size:9.5px!important}
+.command-page .incident-timeline div{font-size:11px!important;line-height:1.45}
+.command-page .incident-actions a,.command-page .incident-actions button{font-size:11px!important}
+
+/* Full WHONET reference */
+.reference-page .reference-status{font-size:12px!important}
+.reference-page .back-dashboard{font-size:12px!important}
+.reference-page .reference-eyebrow{font-size:11px!important}
+.reference-page .reference-hero h1{font-size:28px!important;line-height:1.12}
+.reference-page .reference-hero p{font-size:13px!important;line-height:1.5}
+.reference-page .reference-version span,.reference-page .reference-version small{font-size:11px!important}
+.reference-page .reference-version strong{font-size:13px!important}
+.reference-page .reference-kpis small,.reference-page .reference-kpis em{font-size:11px!important}
+.reference-page .reference-kpis strong{font-size:21px!important}
+.reference-page .reference-tabs button{font-size:12px!important}
+.reference-page .reference-tabs em{font-size:10.5px!important}
+.reference-page .reference-search input,
+.reference-page .reference-toolbar select,
+.reference-page .reference-toolbar button,
+.reference-page .reference-list-head label{font-size:12px!important}
+.reference-page .reference-list-head h2{font-size:14px!important}
+.reference-page .reference-list-head p{font-size:11px!important}
+.reference-page .catalog-loading,.reference-page .catalog-error{font-size:12px!important}
+.reference-page .catalog-code{font-size:11px!important}
+.reference-page .catalog-name strong{font-size:12.5px!important}
+.reference-page .catalog-name small{font-size:11px!important}
+.reference-page .catalog-meta,.reference-page .catalog-badge{font-size:10.5px!important}
+.reference-page .reference-pagination{font-size:11px!important}
+.reference-page .reference-pagination button{font-size:11px!important}
+.reference-page .detail-kicker{font-size:10.5px!important}
+.reference-page .detail-title h2{font-size:22px!important}
+.reference-page .detail-title p,.reference-page .detail-description{font-size:12.5px!important;line-height:1.55}
+.reference-page .detail-section h3{font-size:12px!important}
+.reference-page .detail-grid dt{font-size:10.5px!important}
+.reference-page .detail-grid dd{font-size:12px!important}
+.reference-page .detail-chips span{font-size:10.5px!important}
+.reference-page .reference-note strong{font-size:12px!important}
+.reference-page .reference-note p{font-size:12px!important;line-height:1.5}
+
+/* AMR enrichment inside reference cards */
+.reference-page .amr-context-head span{font-size:11px!important}
+.reference-page .amr-mechanism strong{font-size:12.5px!important}
+.reference-page .amr-relevance{font-size:10px!important}
+.reference-page .amr-mechanism p{font-size:12px!important;line-height:1.5}
+.reference-page .amr-subline>span{font-size:10px!important}
+.reference-page .amr-mini-chips b{font-size:10.5px!important}
+.reference-page .amr-agent strong{font-size:11.5px!important}
+.reference-page .amr-agent code{font-size:10.5px!important}
+.reference-page .amr-agent small{font-size:10.5px!important}
+.reference-page .amr-agent em{font-size:10px!important}
+.reference-page .amr-context-loading,.reference-page .amr-context-empty{font-size:11.5px!important}
+.reference-page .amr-organism-link{font-size:11px!important}
+
+/* AMR mechanisms catalog */
+.mechanism-page .mechanism-status{font-size:12px!important}
+.mechanism-page .back-reference{font-size:12px!important}
+.mechanism-page .mechanism-eyebrow{font-size:11px!important}
+.mechanism-page .mechanism-hero h1{font-size:28px!important;line-height:1.12}
+.mechanism-page .mechanism-hero p{font-size:13px!important;line-height:1.5}
+.mechanism-page .map-action{font-size:12px!important}
+.mechanism-page .mechanism-kpis small,.mechanism-page .mechanism-kpis em{font-size:11px!important}
+.mechanism-page .mechanism-kpis strong{font-size:21px!important}
+.mechanism-page .mechanism-search input,
+.mechanism-page .mechanism-toolbar select,
+.mechanism-page .mechanism-toolbar button{font-size:12px!important}
+.mechanism-page .mechanism-list-head h2{font-size:14px!important}
+.mechanism-page .mechanism-list-head p{font-size:11px!important}
+.mechanism-page .mechanism-loading,.mechanism-page .mechanism-error{font-size:12px!important}
+.mechanism-page .mechanism-code{font-size:11px!important}
+.mechanism-page .mechanism-name strong{font-size:12.5px!important}
+.mechanism-page .mechanism-name small{font-size:11px!important}
+.mechanism-page .mechanism-counts b{font-size:10.5px!important}
+.mechanism-page .mechanism-empty strong{font-size:13px!important}
+.mechanism-page .mechanism-empty p{font-size:12px!important;line-height:1.5}
+.mechanism-page .mechanism-card-top h2{font-size:22px!important}
+.mechanism-page .mechanism-card-top p{font-size:12px!important}
+.mechanism-page .mechanism-kicker{font-size:10.5px!important}
+.mechanism-page .mechanism-card-code{font-size:11px!important}
+.mechanism-page .mechanism-description{font-size:12.5px!important;line-height:1.55}
+.mechanism-page .mechanism-section h3{font-size:12px!important}
+.mechanism-page .mechanism-chips span{font-size:11px!important}
+.mechanism-page .mechanism-link-card strong{font-size:12px!important}
+.mechanism-page .mechanism-link-card small{font-size:10.5px!important}
+.mechanism-page .mechanism-link-card em{font-size:10px!important}
+.mechanism-page .mechanism-map-cta strong{font-size:12px!important}
+.mechanism-page .mechanism-map-cta span{font-size:10.5px!important}
+.mechanism-page .mechanism-note strong{font-size:12px!important}
+.mechanism-page .mechanism-note p{font-size:12px!important;line-height:1.5}
+
+/* Keep the page compact by allowing local panel scrolling instead of micro-text. */
+@media (min-width:1100px) and (min-height:680px){
+  html[data-atlas-concept="clinical"] .clinical-workbench{overflow:auto!important;scrollbar-width:thin}
+  html[data-atlas-concept="clinical"] .clinical-task code,
+  html[data-atlas-concept="clinical"] .clinical-task>small{display:none}
+  html[data-atlas-concept="clinical"] .clinical-task{grid-template-columns:8px minmax(180px,1.5fr) 74px auto!important;min-height:38px!important}
+  html[data-atlas-concept="clinical"] .clinical-task button{grid-column:4}
+  html[data-atlas-concept="clinical"] .clinical-task.active .clinical-detail-strip{grid-column:2/5}
+  html[data-atlas-concept="clinical"] .clinical-actions-body{overflow:auto;scrollbar-width:thin}
+  html[data-atlas-concept="atlas"] .atlas-story,
+  html[data-atlas-concept="atlas"] .atlas-insight-rail{overflow:auto!important;scrollbar-width:thin;padding-right:4px}
+  html[data-atlas-concept="command"] .command-alerts,
+  html[data-atlas-concept="command"] .command-region-card,
+  html[data-atlas-concept="command"] .command-pathogens{overflow:auto!important;scrollbar-width:thin}
+}
+
+@media (max-width:1099px){
+  body{font-size:14px}
+}
