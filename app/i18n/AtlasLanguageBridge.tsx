@@ -17,8 +17,8 @@ export default function AtlasLanguageBridge() {
     const preview = window.localStorage.getItem(PREVIEW_KEY);
     const app = window.localStorage.getItem(APP_KEY);
     const saved = isLanguage(preview) ? preview : isLanguage(app) ? app : null;
-    if (saved && saved !== language) setLanguage(saved);
-  }, [language, setLanguage]);
+    if (saved) setLanguage(saved);
+  }, [setLanguage]);
 
   useEffect(() => {
     window.localStorage.setItem(PREVIEW_KEY, language);
