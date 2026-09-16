@@ -137,8 +137,23 @@
   ];
 
   const allEntries = [...phrases, ...Object.values(pcodeNames), ...looseRegions];
+  const knownEntries = new Set(allEntries.map((entry) => LANGS.map((lang) => entry[lang] || '').join('\u0000')));
   const reverse = new Map();
   allEntries.forEach((entry) => LANGS.forEach((lang) => reverse.set(entry[lang], entry)));
+
+  function registerTranslations(entries = []) {
+    let changed = false;
+    entries.forEach((entry) => {
+      if (!entry || !LANGS.every((lang) => typeof entry[lang] === 'string')) return;
+      const key = LANGS.map((lang) => entry[lang]).join('\u0000');
+      if (knownEntries.has(key)) return;
+      knownEntries.add(key);
+      allEntries.push(entry);
+      LANGS.forEach((lang) => reverse.set(entry[lang], entry));
+      changed = true;
+    });
+    if (changed) scheduleApply();
+  }
 
   function translateExact(value) {
     const entry = reverse.get(value);
@@ -256,6 +271,7 @@
     translate: (value) => translateFragments(value),
     regionName,
     pcodeNames,
+    registerTranslations,
     applyLanguage
   };
 })();
