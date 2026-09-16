@@ -28,8 +28,8 @@
   }
   function loadGlobalI18n(){
     if(!document.querySelector('link[data-atlas-global-i18n]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./atlas-global-i18n.css?v=20260916-1';style.dataset.atlasGlobalI18n='1';document.head.appendChild(style)}
-    const loadExtensions=()=>{if(!window.__atlasI18nExtensions)loadScript('./atlas-i18n-extensions.js?v=20260916-2','i18n-extensions',()=>window.AtlasI18nExtensions?.apply?.())};
-    if(window.AtlasGlobalI18n){window.AtlasGlobalI18n.applyLanguage?.();loadExtensions()}else loadScript('./atlas-global-i18n.js?v=20260916-2','global-i18n',()=>{window.AtlasGlobalI18n?.applyLanguage?.();loadExtensions()});
+    const loadExtensions=()=>{if(!window.__atlasI18nExtensions)loadScript('./atlas-i18n-extensions.js?v=20260916-3','i18n-extensions',()=>window.AtlasI18nExtensions?.apply?.())};
+    if(window.AtlasGlobalI18n){window.AtlasGlobalI18n.applyLanguage?.();loadExtensions()}else loadScript('./atlas-global-i18n.js?v=20260916-3','global-i18n',()=>{window.AtlasGlobalI18n?.applyLanguage?.();loadExtensions()});
   }
   function loadPlatformStatus(){
     if(!document.querySelector('link[data-atlas-platform-status]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./platform-status.css?v=20260916-1';style.dataset.atlasPlatformStatus='1';document.head.appendChild(style)}
