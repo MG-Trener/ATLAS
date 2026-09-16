@@ -119,11 +119,11 @@
     if(window[key]||document.querySelector(`script[data-atlas-script="${key}"]`))return;
     const s=document.createElement('script');s.src=src;s.dataset.atlasScript=key;s.onload=()=>{window[key]=true;};document.head.appendChild(s);
   }
-  function loadAdvanced(){injectScript('./advanced.js','__atlasAdvancedLoaded');injectScript('./mapping.js','__atlasMappingLoaded');injectScript('./map-mechanisms.js','__atlasMechanismMapLoaded');}
+  function loadAdvanced(){injectScript('./advanced.js?v=20260916-3','__atlasAdvancedLoaded');injectScript('./mapping.js?v=20260916-2','__atlasMappingLoaded');injectScript('./map-mechanisms.js?v=20260916-2','__atlasMechanismMapLoaded');}
 
   if(!window.__atlasSectionsLoading){
     window.__atlasSectionsLoading=true;
-    const s=document.createElement('script');s.src='./sections.js';s.onload=()=>{window.__atlasSectionsLoaded=true;loadAdvanced();};s.onerror=()=>{window.__atlasSectionsLoading=false;loadAdvanced();};document.head.appendChild(s);
+    const s=document.createElement('script');s.src='./sections.js?v=20260916-2';s.onload=()=>{window.__atlasSectionsLoaded=true;loadAdvanced();};s.onerror=()=>{window.__atlasSectionsLoading=false;loadAdvanced();};document.head.appendChild(s);
   }else if(window.__atlasSectionsLoaded){loadAdvanced();}
   else{
     const wait=setInterval(()=>{if(window.__atlasSectionsLoaded){clearInterval(wait);loadAdvanced();}},80);

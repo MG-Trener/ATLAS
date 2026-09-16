@@ -11,7 +11,7 @@
 
   const style = document.createElement('link');
   style.rel = 'stylesheet';
-  style.href = './sections.css';
+  style.href = './sections.css?v=20260916-2';
   document.head.appendChild(style);
 
   const view = document.createElement('section');

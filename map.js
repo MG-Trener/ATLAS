@@ -8,7 +8,7 @@
       return;
     }
     const script = document.createElement('script');
-    script.src = './dashboard.js';
+    script.src = './dashboard.js?v=20260916-3';
     script.onload = () => {
       window.__atlasDashboardLoaded = true;
       resolve();

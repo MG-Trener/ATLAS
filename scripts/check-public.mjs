@@ -42,6 +42,25 @@ for (const page of requiredPages) {
   }
 }
 
+if (existsSync(file('atlas-i18n-extensions.js'))) {
+  const extensions=readFileSync(file('atlas-i18n-extensions.js'),'utf8');
+  if (/tr\(['"]изолятов['"],['"]изолят['"],['"]isolates['"]\)/.test(extensions)) {
+    fail('atlas-i18n-extensions.js: unsafe partial translation can repeatedly mutate “изолятов”');
+  }
+}
+
+if (existsSync(file('preview-i18n.js'))) {
+  const previewI18n=readFileSync(file('preview-i18n.js'),'utf8');
+  if (!/registerTranslations/.test(previewI18n)) fail('preview-i18n.js: shared translation registry is missing');
+}
+
+if (existsSync(file('index.html'))) {
+  const indexHtml=readFileSync(file('index.html'),'utf8');
+  for (const asset of ['preview-i18n.js','map.js']) {
+    if (!new RegExp(`${asset.replace('.', '\\.')}\\?v=`).test(indexHtml)) fail(`index.html: ${asset} must be cache-busted`);
+  }
+}
+
 let manifest=null;
 if (existsSync(file('platform-manifest.json'))) {
   try {

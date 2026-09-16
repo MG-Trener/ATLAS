@@ -22,6 +22,17 @@
     tr('Supabase · read-only catalog','Supabase · тек оқуға арналған каталог','Supabase · read-only catalog'),tr('Supabase · AMR knowledge layer','Supabase · AMR білім қабаты','Supabase · AMR knowledge layer'),tr('AMR KNOWLEDGE GRAPH · SUPABASE','AMR БІЛІМ ГРАФЫ · SUPABASE','AMR KNOWLEDGE GRAPH · SUPABASE'),tr('AMR surveillance context','AMR мониторинг контексті','AMR surveillance context'),tr('WHONET antimicrobial codes','WHONET микробқа қарсы препарат кодтары','WHONET antimicrobial codes'),tr('enzyme · target · permeability','фермент · нысана · өткізгіштік','enzyme · target · permeability')
   ];
 
+  if (window.AtlasPreviewI18n?.registerTranslations) {
+    window.AtlasPreviewI18n.registerTranslations(phrases);
+    window.AtlasGlobalI18n=Object.freeze({
+      get language(){return window.AtlasPreviewI18n.language},
+      setLanguage:(next)=>window.AtlasPreviewI18n.setLanguage(next),
+      applyLanguage:()=>window.AtlasPreviewI18n.applyLanguage(),
+      translate:(value)=>window.AtlasPreviewI18n.translate(value)
+    });
+    return;
+  }
+
   const norm=v=>String(v??'').replace(/\s+/g,' ').trim();
   const exact=new Map();
   phrases.forEach(p=>LANGS.forEach(l=>exact.set(norm(p[l]),p)));

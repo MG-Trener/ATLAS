@@ -4,12 +4,12 @@
 
   const style = document.createElement('link');
   style.rel = 'stylesheet';
-  style.href = './advanced.css';
+  style.href = './advanced.css?v=20260916-2';
   document.head.appendChild(style);
 
   const qualityStyle = document.createElement('link');
   qualityStyle.rel = 'stylesheet';
-  qualityStyle.href = './whonet-quality.css';
+  qualityStyle.href = './whonet-quality.css?v=20260916-2';
   document.head.appendChild(qualityStyle);
 
   const navButtons = [...document.querySelectorAll('.nav-item')];
