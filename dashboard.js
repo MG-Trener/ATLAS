@@ -119,7 +119,7 @@
     if(window[key]||document.querySelector(`script[data-atlas-script="${key}"]`))return;
     const s=document.createElement('script');s.src=src;s.dataset.atlasScript=key;s.onload=()=>{window[key]=true;};document.head.appendChild(s);
   }
-  function loadAdvanced(){injectScript('./advanced.js','__atlasAdvancedLoaded');injectScript('./mapping.js','__atlasMappingLoaded');}
+  function loadAdvanced(){injectScript('./advanced.js','__atlasAdvancedLoaded');injectScript('./mapping.js','__atlasMappingLoaded');injectScript('./map-mechanisms.js','__atlasMechanismMapLoaded');}
 
   if(!window.__atlasSectionsLoading){
     window.__atlasSectionsLoading=true;
