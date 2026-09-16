@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <link rel="stylesheet" href="./preview.css" />
   <link rel="stylesheet" href="./map.css" />
+  <link rel="stylesheet" href="./preview-i18n.css" />
 </head>
 <body>
   <div class="shell">
@@ -48,7 +49,11 @@
       <header class="topbar">
         <div class="search"><span>⌕</span><input placeholder="Поиск микроорганизмов, антибиотиков, регионов, публикаций…"><kbd>Ctrl K</kbd></div>
         <div class="top-actions">
-          <button class="ghost">🌐 RU</button>
+          <div class="language-switch" role="group" aria-label="Language">
+            <button type="button" data-lang="ru">RU</button>
+            <button type="button" data-lang="kk">KZ</button>
+            <button type="button" data-lang="en">EN</button>
+          </div>
           <button class="bell">♢<i></i></button>
           <div class="profile"><span>АП</span><div><strong>Д-р А. Петров</strong><small>Демо-профиль</small></div><em>⌄</em></div>
         </div>
@@ -189,6 +194,7 @@
       }
     });
   </script>
+  <script src="./preview-i18n.js"></script>
   <script src="./map.js"></script>
 </body>
 </html>
