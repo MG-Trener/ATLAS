@@ -6,7 +6,7 @@ const root = process.cwd();
 const requiredPages = ['index.html','national-atlas.html','command-center.html','reference.html','mechanisms.html'];
 const requiredShared = [
   'atlas-themes.js','atlas-global-i18n.js','atlas-i18n-extensions.js','atlas-global-i18n.css',
-  'platform-status.js','platform-status.css','regions-loader.js','atlas-readable-type.css',
+  'platform-status.js','platform-status.css','regions-loader.js','regions.json','atlas-readable-type.css',
   'analysis-context.js','amr-demo-data.js','regional-analysis.js','unified-analytics.js'
 ];
 const failures = [];
@@ -42,6 +42,24 @@ for (const page of requiredPages) {
   }
 }
 
+if (existsSync(file('regions.json'))) {
+  try {
+    const regions=JSON.parse(readFileSync(file('regions.json'),'utf8'));
+    if (!Array.isArray(regions)) fail('regions.json: expected an array');
+    else {
+      const pcodes=regions.map(region=>region?.pcode).filter(Boolean);
+      const unique=new Set(pcodes);
+      if (regions.length!==20) fail(`regions.json: expected 20 territories, found ${regions.length}`);
+      if (unique.size!==20) fail(`regions.json: expected 20 unique PCODE values, found ${unique.size}`);
+      for (const region of regions) {
+        if (!region?.pcode || !region?.path) fail('regions.json: every territory must contain pcode and SVG path');
+      }
+    }
+  } catch (error) {
+    fail(`regions.json: invalid JSON (${error.message})`);
+  }
+}
+
 const ignoredDirs=new Set(['node_modules','.next','.git','out']);
 function walk(dir='.'){
   const abs=file(dir);
@@ -63,10 +81,6 @@ for (const path of jsFiles) {
   if (check.status!==0) fail(`${path}: JavaScript syntax check failed\n${check.stderr || check.stdout}`);
 }
 
-if (!existsSync(file('regions.json'))) {
-  warn('regions.json is not vendored yet; runtime map loader still relies on external fallbacks/cache.');
-}
-
 if (warnings.length) {
   console.log('\nWarnings:');
   warnings.forEach(message=>console.log(`  - ${message}`));
@@ -78,4 +92,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`\nPublic prototype verification OK: ${requiredPages.length} pages, ${jsFiles.length} JS modules checked.`);
+console.log(`\nPublic prototype verification OK: ${requiredPages.length} pages, 20 territories, ${jsFiles.length} JS modules checked.`);
