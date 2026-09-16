@@ -41,6 +41,19 @@ export default function Page() {
           Карта · аналитика →
         </Link>
         <Link
+          href="/reference"
+          style={{
+            ...baseButton,
+            minHeight: 34,
+            border: "1px solid #bcdcf9",
+            background: "#eaf5ff",
+            color: "#195a96",
+            fontSize: 10,
+          }}
+        >
+          Справочники
+        </Link>
+        <Link
           href="/whonet"
           style={{
             ...baseButton,
