@@ -7,7 +7,7 @@
   <title>AMR Atlas — Intelligence Center</title>
   <meta name="description" content="Оперативный центр мониторинга антимикробной резистентности" />
   <link rel="stylesheet" href="./command-center.css?v=20260916-2" />
-  <link rel="stylesheet" href="./atlas-themes.css?v=20260916-4" />
+  <link rel="stylesheet" href="./atlas-themes.css?v=20260916-5" />
 </head>
 <body class="command-page">
   <div class="command-shell">
@@ -26,72 +26,30 @@
     <main class="command-main">
       <header class="command-topbar">
         <div class="command-title"><span>AMR INTELLIGENCE CENTER</span><small>Казахстан · демонстрационный оперативный режим</small></div>
-        <div class="command-statuses">
-          <span><i></i> DATA ONLINE</span><span>20 TERRITORIES</span><span id="command-clock">--:--:--</span>
-        </div>
+        <div class="command-statuses"><span><i></i> DATA ONLINE</span><span>20 TERRITORIES</span><span id="command-clock">--:--:--</span></div>
         <div class="top-actions"><div class="language-switch" hidden></div></div>
       </header>
 
       <section class="command-grid">
-        <section class="command-kpis">
-          <article><span>R</span><strong id="cc-r">29.8%</strong><small>MEAN RESISTANCE</small></article>
-          <article><span>M</span><strong id="cc-mdr">12.4%</strong><small>MDR</small></article>
-          <article><span>!</span><strong>07</strong><small>ACTIVE SIGNALS</small></article>
-          <article><span>N</span><strong>186.7K</strong><small>ISOLATES</small></article>
-        </section>
+        <section class="command-kpis"><article><span>R</span><strong id="cc-r">29.8%</strong><small>MEAN RESISTANCE</small></article><article><span>M</span><strong id="cc-mdr">12.4%</strong><small>MDR</small></article><article><span>!</span><strong>07</strong><small>ACTIVE SIGNALS</small></article><article><span>N</span><strong>186.7K</strong><small>ISOLATES</small></article></section>
 
         <section class="command-map-panel">
-          <div class="command-map-head">
-            <div><span>OPERATIONAL MAP</span><strong id="cc-layer-title">ESBL · national surveillance layer</strong></div>
-            <div class="command-layer-switch">
-              <button class="active" data-layer="esbl">ESBL</button><button data-layer="cre">CRE</button><button data-layer="mrsa">MRSA</button><button data-layer="vre">VRE</button><button data-layer="ndm">NDM</button><button data-layer="oxa48">OXA-48</button>
-            </div>
-          </div>
-          <div class="command-map-stage">
-            <svg id="command-kz-map" viewBox="0 0 620 340"></svg>
-            <div id="command-map-tooltip" class="command-tooltip"></div>
-            <div class="command-map-gridlines"></div>
-          </div>
+          <div class="command-map-head"><div><span>OPERATIONAL MAP</span><strong id="cc-layer-title">ESBL · national surveillance layer</strong></div><div class="command-layer-switch"><button class="active" data-layer="esbl">ESBL</button><button data-layer="cre">CRE</button><button data-layer="mrsa">MRSA</button><button data-layer="vre">VRE</button><button data-layer="ndm">NDM</button><button data-layer="oxa48">OXA-48</button></div></div>
+          <div class="command-map-stage"><svg id="command-kz-map" viewBox="0 0 620 340"></svg><div id="command-map-tooltip" class="command-tooltip"></div><div class="command-map-gridlines"></div></div>
           <div class="command-map-foot"><span>DEMO LAYER · NOT OFFICIAL STATISTICS</span><span id="cc-selected-name">KAZAKHSTAN</span></div>
         </section>
 
-        <aside class="command-alerts">
-          <div class="section-label">PRIORITY SIGNALS</div>
-          <article class="critical"><span>CRITICAL</span><strong>Carbapenem resistance</strong><p>K. pneumoniae · East Kazakhstan</p><b>+5.4 pp</b></article>
-          <article class="high"><span>HIGH</span><strong>ESBL cluster</strong><p>Enterobacterales · Abay</p><b>34.8%</b></article>
-          <article class="medium"><span>WATCH</span><strong>MRSA trend</strong><p>S. aureus · Almaty</p><b>+2.8 pp</b></article>
-          <article class="medium"><span>WATCH</span><strong>NDM signal</strong><p>K. pneumoniae · Astana</p><b>↑</b></article>
-          <a href="./mechanisms.html">OPEN AMR MECHANISMS →</a>
-        </aside>
+        <aside class="command-alerts"><div class="section-label">PRIORITY SIGNALS</div><article class="critical"><span>CRITICAL</span><strong>Carbapenem resistance</strong><p>K. pneumoniae · East Kazakhstan</p><b>+5.4 pp</b></article><article class="high"><span>HIGH</span><strong>ESBL cluster</strong><p>Enterobacterales · Abay</p><b>34.8%</b></article><article class="medium"><span>WATCH</span><strong>MRSA trend</strong><p>S. aureus · Almaty</p><b>+2.8 pp</b></article><article class="medium"><span>WATCH</span><strong>NDM signal</strong><p>K. pneumoniae · Astana</p><b>↑</b></article><a href="./mechanisms.html">OPEN AMR MECHANISMS →</a></aside>
 
-        <section class="command-region-card">
-          <div class="section-label">SELECTED TERRITORY</div>
-          <h2 id="cc-region">Kazakhstan</h2>
-          <div class="command-region-metrics">
-            <div><span>LAYER</span><strong id="cc-layer-value">18.4%</strong></div>
-            <div><span>ISOLATES</span><strong id="cc-isolates">186742</strong></div>
-            <div><span>LABS</span><strong id="cc-labs">54</strong></div>
-          </div>
-          <p id="cc-region-note">National demo baseline. Select any territory directly on the operational map.</p>
-        </section>
+        <section class="command-region-card"><div class="section-label">SELECTED TERRITORY</div><h2 id="cc-region">Kazakhstan</h2><div class="command-region-metrics"><div><span>LAYER</span><strong id="cc-layer-value">18.4%</strong></div><div><span>ISOLATES</span><strong id="cc-isolates">186742</strong></div><div><span>LABS</span><strong id="cc-labs">54</strong></div></div><p id="cc-region-note">National demo baseline. Select any territory directly on the operational map.</p></section>
 
-        <section class="command-trend-panel">
-          <div class="section-label">7-YEAR TREND</div>
-          <svg viewBox="0 0 700 150" preserveAspectRatio="none"><g><line x1="0" x2="700" y1="30" y2="30"/><line x1="0" x2="700" y1="75" y2="75"/><line x1="0" x2="700" y1="120" y2="120"/></g><polyline points="0,126 116,116 232,101 348,82 464,65 580,44 700,24"/></svg>
-          <div class="command-trend-labels"><span>2020</span><span>2021</span><span>2022</span><span>2023</span><span>2024</span><span>2025</span><span>2026</span></div>
-        </section>
+        <section class="command-trend-panel"><div class="section-label">7-YEAR TREND</div><svg viewBox="0 0 700 150" preserveAspectRatio="none"><g><line x1="0" x2="700" y1="30" y2="30"/><line x1="0" x2="700" y1="75" y2="75"/><line x1="0" x2="700" y1="120" y2="120"/></g><polyline points="0,126 116,116 232,101 348,82 464,65 580,44 700,24"/></svg><div class="command-trend-labels"><span>2020</span><span>2021</span><span>2022</span><span>2023</span><span>2024</span><span>2025</span><span>2026</span></div></section>
 
-        <section class="command-pathogens">
-          <div class="section-label">TOP WATCHLIST</div>
-          <div class="watch-row"><strong>K. pneumoniae</strong><span>CRE / ESBL</span><b>HIGH</b></div>
-          <div class="watch-row"><strong>A. baumannii</strong><span>CRAB</span><b>HIGH</b></div>
-          <div class="watch-row"><strong>E. coli</strong><span>ESBL</span><b>WATCH</b></div>
-          <div class="watch-row"><strong>S. aureus</strong><span>MRSA</span><b>WATCH</b></div>
-        </section>
+        <section class="command-pathogens"><div class="section-label">TOP WATCHLIST</div><div class="watch-row"><strong>K. pneumoniae</strong><span>CRE / ESBL</span><b>HIGH</b></div><div class="watch-row"><strong>A. baumannii</strong><span>CRAB</span><b>HIGH</b></div><div class="watch-row"><strong>E. coli</strong><span>ESBL</span><b>WATCH</b></div><div class="watch-row"><strong>S. aureus</strong><span>MRSA</span><b>WATCH</b></div></section>
       </section>
     </main>
   </div>
-  <script src="./atlas-themes.js?v=20260916-4"></script>
+  <script src="./atlas-themes.js?v=20260916-5"></script>
   <script src="./regions-loader.js?v=20260916-1"></script>
   <script src="./command-center.js?v=20260916-3"></script>
 </body>
