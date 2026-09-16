@@ -1,135 +1,30 @@
 (() => {
   'use strict';
-
-  const STORAGE_KEY = 'atlas-ui-theme';
-  const DEFAULT_THEME = 'clinical';
-  const THEMES = ['clinical','research','command'];
-  const LEGACY_MAP = {dark:'command',teal:'clinical',sand:'research',contrast:'clinical'};
-  const copy = {
-    ru:{button:'Концепция',title:'Вариант интерфейса',hint:'Три разные модели отображения Atlas',selected:'Выбрано',themes:{
-      clinical:['Clinical Dashboard','Медицинская рабочая панель · боковая навигация'],
-      research:['Research Atlas','Научный портал · горизонтальная навигация · больше воздуха'],
-      command:['Command Center','Оперативный центр · тёмный · плотный · карта и сигналы']
-    }},
-    kk:{button:'Концепция',title:'Интерфейс нұсқасы',hint:'Atlas интерфейсінің үш түрлі моделі',selected:'Таңдалды',themes:{
-      clinical:['Clinical Dashboard','Медициналық жұмыс панелі · бүйірлік навигация'],
-      research:['Research Atlas','Ғылыми портал · көлденең навигация · кең макет'],
-      command:['Command Center','Жедел орталық · қараңғы · ықшам · карта және сигналдар']
-    }},
-    en:{button:'Concept',title:'Interface concept',hint:'Three distinct Atlas presentation models',selected:'Selected',themes:{
-      clinical:['Clinical Dashboard','Clinical workspace · sidebar navigation'],
-      research:['Research Atlas','Scientific portal · horizontal navigation · spacious layout'],
-      command:['Command Center','Operations center · dark · dense · map and alerts']
-    }}
+  const STORAGE_KEY='atlas-ui-concept';
+  const LEGACY_KEY='atlas-ui-theme';
+  const CONCEPTS=['clinical','atlas','command'];
+  const routes={clinical:'./index.html',atlas:'./national-atlas.html',command:'./command-center.html'};
+  const legacy={clinical:'clinical',research:'atlas',command:'command',dark:'command',teal:'clinical',sand:'atlas',contrast:'clinical'};
+  const copy={
+    ru:{button:'Концепция',title:'Модель интерфейса',hint:'Три самостоятельных способа работать с AMR Atlas',selected:'Открыта',items:{clinical:['Clinical Workspace','Рабочая медицинская панель'],atlas:['National AMR Atlas','Карта как главный интерфейс'],command:['Intelligence Center','Оперативный центр мониторинга']}},
+    kk:{button:'Концепция',title:'Интерфейс моделі',hint:'AMR Atlas-пен жұмыс істеудің үш бөлек тәсілі',selected:'Ашық',items:{clinical:['Clinical Workspace','Медициналық жұмыс панелі'],atlas:['National AMR Atlas','Карта негізгі интерфейс ретінде'],command:['Intelligence Center','Жедел мониторинг орталығы']}},
+    en:{button:'Concept',title:'Interface model',hint:'Three independent ways to work with AMR Atlas',selected:'Open',items:{clinical:['Clinical Workspace','Clinical working dashboard'],atlas:['National AMR Atlas','Map-first national interface'],command:['Intelligence Center','Operational monitoring center']}}
   };
-
-  const root = document.documentElement;
-  const language = () => {
-    const saved = localStorage.getItem('atlas-preview-language');
-    if (saved === 'kk' || saved === 'en') return saved;
-    return 'ru';
-  };
-  const t = () => copy[language()] || copy.ru;
-
-  function normalizeStoredTheme() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (THEMES.includes(saved)) return saved;
-    if (LEGACY_MAP[saved]) {
-      localStorage.setItem(STORAGE_KEY, LEGACY_MAP[saved]);
-      return LEGACY_MAP[saved];
-    }
-    return DEFAULT_THEME;
-  }
-  const current = () => normalizeStoredTheme();
-
-  function metaColor(theme) {
-    return ({clinical:'#f4f8fc',research:'#f7f5ef',command:'#07111b'})[theme] || '#f4f8fc';
-  }
-
-  function setTheme(theme, persist = true) {
-    if (!THEMES.includes(theme)) return;
-    root.dataset.atlasTheme = theme;
-    if (persist) localStorage.setItem(STORAGE_KEY, theme);
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', metaColor(theme));
-    document.querySelectorAll('.theme-card').forEach(card => {
-      const active = card.dataset.theme === theme;
-      card.classList.toggle('active', active);
-      card.setAttribute('aria-pressed', active ? 'true' : 'false');
-    });
-    document.dispatchEvent(new CustomEvent('atlas:theme-changed', {detail:{theme}}));
-  }
-
-  function card(theme) {
-    const text = t().themes[theme];
-    return `<button class="theme-card${current()===theme?' active':''}" type="button" data-theme="${theme}" aria-pressed="${current()===theme?'true':'false'}">
-      <span class="theme-preview ${theme}"><i></i><span class="theme-preview-main"><b></b><span class="theme-preview-panels"><b></b><b></b></span></span></span>
-      <span class="theme-card-copy"><strong>${text[0]}</strong><small>${text[1]}</small><span class="theme-check">✓ ${t().selected}</span></span>
-    </button>`;
-  }
-
-  function renderPopover() {
-    let popover = document.querySelector('.theme-popover');
-    if (!popover) {
-      popover = document.createElement('div');
-      popover.className = 'theme-popover';
-      popover.hidden = true;
-      document.body.appendChild(popover);
-    }
-    popover.innerHTML = `<div class="theme-popover-head"><div><strong>${t().title}</strong><small>${t().hint}</small></div><button class="theme-popover-close" type="button" aria-label="Close">×</button></div><div class="theme-grid">${THEMES.map(card).join('')}</div>`;
-    popover.querySelector('.theme-popover-close')?.addEventListener('click',()=>popover.hidden=true);
-    popover.querySelectorAll('.theme-card').forEach(button => button.addEventListener('click',()=>{
-      setTheme(button.dataset.theme);
-      renderPopover();
-    }));
-    return popover;
-  }
-
-  function mountTrigger() {
-    const actions = document.querySelector('.top-actions');
-    if (!actions) return;
-    let trigger = actions.querySelector('.theme-trigger');
-    if (!trigger) {
-      trigger = document.createElement('button');
-      trigger.type = 'button';
-      trigger.className = 'theme-trigger';
-      const languageSwitch = actions.querySelector('.language-switch');
-      if (languageSwitch?.nextSibling) actions.insertBefore(trigger, languageSwitch.nextSibling);
-      else actions.prepend(trigger);
-    }
-    trigger.innerHTML = `<span class="theme-dot"></span><span class="theme-label">${t().button}</span>`;
-    trigger.setAttribute('aria-label', t().title);
-    trigger.onclick = () => {
-      const popover = renderPopover();
-      popover.hidden = !popover.hidden;
-    };
-  }
-
-  function refreshLanguage() {
-    mountTrigger();
-    const popover = document.querySelector('.theme-popover');
-    if (popover && !popover.hidden) renderPopover();
-  }
-
-  setTheme(current(), false);
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountTrigger, {once:true});
-  else mountTrigger();
-
-  document.addEventListener('atlas:language-changed', refreshLanguage);
-  document.addEventListener('click', event => {
-    if (event.target.closest?.('[data-lang]')) setTimeout(refreshLanguage, 0);
-    const popover = document.querySelector('.theme-popover');
-    const trigger = document.querySelector('.theme-trigger');
-    if (!popover || popover.hidden) return;
-    if (popover.contains(event.target) || trigger?.contains(event.target)) return;
-    popover.hidden = true;
-  });
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') {
-      const popover = document.querySelector('.theme-popover');
-      if (popover) popover.hidden = true;
-    }
-  });
-
-  window.AtlasThemes = {themes:[...THEMES],get theme(){return current()},setTheme};
+  const language=()=>{const v=localStorage.getItem('atlas-preview-language');return v==='kk'||v==='en'?v:'ru'};
+  const t=()=>copy[language()]||copy.ru;
+  function pathConcept(){const p=location.pathname.toLowerCase();if(p.endsWith('/national-atlas.html'))return'atlas';if(p.endsWith('/command-center.html'))return'command';if(p.endsWith('/index.html')||p.endsWith('/atlas/')||p.endsWith('/atlas'))return'clinical';return null}
+  function stored(){const direct=localStorage.getItem(STORAGE_KEY);if(CONCEPTS.includes(direct))return direct;const old=legacy[localStorage.getItem(LEGACY_KEY)];if(old){localStorage.setItem(STORAGE_KEY,old);localStorage.removeItem(LEGACY_KEY);return old}return'clinical'}
+  function current(){return pathConcept()||stored()}
+  function selectConcept(concept,navigate=true){if(!CONCEPTS.includes(concept))return;localStorage.setItem(STORAGE_KEY,concept);document.documentElement.dataset.atlasConcept=concept;document.dispatchEvent(new CustomEvent('atlas:concept-changed',{detail:{concept}}));if(navigate&&pathConcept()!==concept)location.href=routes[concept]}
+  function preview(concept){return `<span class="concept-preview ${concept}"><i></i><span><b></b><em></em><em></em></span></span>`}
+  function card(concept){const text=t().items[concept];const active=current()===concept;return `<button class="concept-card${active?' active':''}" type="button" data-concept="${concept}" aria-pressed="${active}">${preview(concept)}<span class="concept-copy"><strong>${text[0]}</strong><small>${text[1]}</small><span>${active?'✓ '+t().selected:'→'}</span></span></button>`}
+  function renderPopover(){let p=document.querySelector('.theme-popover');if(!p){p=document.createElement('div');p.className='theme-popover';p.hidden=true;document.body.appendChild(p)}p.innerHTML=`<div class="theme-popover-head"><div><strong>${t().title}</strong><small>${t().hint}</small></div><button class="theme-popover-close" type="button" aria-label="Close">×</button></div><div class="concept-grid">${CONCEPTS.map(card).join('')}</div>`;p.querySelector('.theme-popover-close')?.addEventListener('click',()=>p.hidden=true);p.querySelectorAll('[data-concept]').forEach(btn=>btn.addEventListener('click',()=>selectConcept(btn.dataset.concept,true)));return p}
+  function mount(){const actions=document.querySelector('.top-actions');if(!actions)return;let trigger=actions.querySelector('.theme-trigger');if(!trigger){trigger=document.createElement('button');trigger.type='button';trigger.className='theme-trigger';const languageSwitch=actions.querySelector('.language-switch');if(languageSwitch?.nextSibling)actions.insertBefore(trigger,languageSwitch.nextSibling);else actions.prepend(trigger)}trigger.innerHTML=`<span class="theme-dot"></span><span>${t().button}</span>`;trigger.setAttribute('aria-label',t().title);trigger.onclick=()=>{const p=renderPopover();p.hidden=!p.hidden}}
+  function refresh(){mount();const p=document.querySelector('.theme-popover');if(p&&!p.hidden)renderPopover()}
+  selectConcept(current(),false);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
+  document.addEventListener('atlas:language-changed',refresh);
+  document.addEventListener('click',e=>{if(e.target.closest?.('[data-lang]'))setTimeout(refresh,0);const p=document.querySelector('.theme-popover');const tr=document.querySelector('.theme-trigger');if(!p||p.hidden||p.contains(e.target)||tr?.contains(e.target))return;p.hidden=true});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){const p=document.querySelector('.theme-popover');if(p)p.hidden=true}});
+  window.AtlasThemes={concepts:[...CONCEPTS],get concept(){return current()},setConcept:selectConcept,setTheme:selectConcept};
 })();
