@@ -21,6 +21,15 @@
   function renderPopover(){let p=document.querySelector('.theme-popover');if(!p){p=document.createElement('div');p.className='theme-popover';p.hidden=true;document.body.appendChild(p)}p.innerHTML=`<div class="theme-popover-head"><div><strong>${t().title}</strong><small>${t().hint}</small></div><button class="theme-popover-close" type="button" aria-label="Close">×</button></div><div class="concept-grid">${CONCEPTS.map(card).join('')}</div>`;p.querySelector('.theme-popover-close')?.addEventListener('click',()=>p.hidden=true);p.querySelectorAll('[data-concept]').forEach(btn=>btn.addEventListener('click',()=>selectConcept(btn.dataset.concept,true)));return p}
   function mount(){const actions=document.querySelector('.top-actions');if(!actions)return;let trigger=actions.querySelector('.theme-trigger');if(!trigger){trigger=document.createElement('button');trigger.type='button';trigger.className='theme-trigger';const languageSwitch=actions.querySelector('.language-switch');if(languageSwitch?.nextSibling)actions.insertBefore(trigger,languageSwitch.nextSibling);else actions.prepend(trigger)}trigger.innerHTML=`<span class="theme-dot"></span><span>${t().button}</span>`;trigger.setAttribute('aria-label',t().title);trigger.onclick=()=>{const p=renderPopover();p.hidden=!p.hidden}}
   function refresh(){mount();const p=document.querySelector('.theme-popover');if(p&&!p.hidden)renderPopover()}
+  function loadScript(src,key,ready){
+    const existing=document.querySelector(`script[data-atlas-module="${key}"]`);
+    if(existing){if(existing.dataset.loaded==='1')ready?.();else existing.addEventListener('load',()=>ready?.(),{once:true});return}
+    const script=document.createElement('script');script.src=src;script.async=false;script.dataset.atlasModule=key;script.addEventListener('load',()=>{script.dataset.loaded='1';ready?.()},{once:true});script.addEventListener('error',()=>ready?.(),{once:true});document.body.appendChild(script);
+  }
+  function loadGlobalI18n(){
+    if(!document.querySelector('link[data-atlas-global-i18n]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./atlas-global-i18n.css?v=20260916-1';style.dataset.atlasGlobalI18n='1';document.head.appendChild(style)}
+    if(!window.AtlasGlobalI18n)loadScript('./atlas-global-i18n.js?v=20260916-1','global-i18n',()=>window.AtlasGlobalI18n?.applyLanguage?.());
+  }
   function loadClinicalWorkbench(){
     if(pathConcept()!=='clinical'||document.querySelector('link[data-atlas-clinical]'))return;
     const style=document.createElement('link');style.rel='stylesheet';style.href='./clinical-workspace.css?v=20260916-2';style.dataset.atlasClinical='1';document.head.appendChild(style);
@@ -40,11 +49,6 @@
       const extra=document.createElement('link');extra.rel='stylesheet';extra.href='./atlas-readable-reference.css?v=20260916-1';extra.dataset.atlasReferenceReadable='1';document.head.appendChild(extra);
     }
   }
-  function loadScript(src,key,ready){
-    const existing=document.querySelector(`script[data-atlas-module="${key}"]`);
-    if(existing){if(existing.dataset.loaded==='1')ready?.();else existing.addEventListener('load',()=>ready?.(),{once:true});return}
-    const script=document.createElement('script');script.src=src;script.async=false;script.dataset.atlasModule=key;script.addEventListener('load',()=>{script.dataset.loaded='1';ready?.()},{once:true});script.addEventListener('error',()=>ready?.(),{once:true});document.body.appendChild(script);
-  }
   function loadRegionalAnalysis(){
     if(!pathConcept())return;
     if(!document.querySelector('link[data-atlas-regional-analysis]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./regional-analysis.css?v=20260916-1';style.dataset.atlasRegionalAnalysis='1';document.head.appendChild(style)}
@@ -57,7 +61,7 @@
     };
     if(window.AtlasAnalysisContext)afterContext();else loadScript('./analysis-context.js?v=20260916-2','analysis-context',afterContext);
   }
-  function boot(){mount();loadClinicalWorkbench();loadViewportAssets();loadReadableType();loadRegionalAnalysis()}
+  function boot(){mount();loadGlobalI18n();loadClinicalWorkbench();loadViewportAssets();loadReadableType();loadRegionalAnalysis()}
   selectConcept(current(),false);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
   document.addEventListener('atlas:language-changed',refresh);
