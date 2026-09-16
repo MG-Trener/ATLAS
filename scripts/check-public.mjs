@@ -7,7 +7,7 @@ const requiredPages = ['index.html','national-atlas.html','command-center.html',
 const requiredShared = [
   'atlas-themes.js','atlas-global-i18n.js','atlas-i18n-extensions.js','atlas-global-i18n.css',
   'platform-status.js','platform-status.css','platform-manifest.json','regions-loader.js','regions.json','atlas-readable-type.css',
-  'analysis-context.js','amr-demo-data.js','regional-analysis.js','unified-analytics.js'
+  'analysis-context.js','amr-demo-data.js','regional-analysis.js','unified-analytics.js','whonet-quality.css'
 ];
 const failures = [];
 const warnings = [];

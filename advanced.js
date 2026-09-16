@@ -7,6 +7,11 @@
   style.href = './advanced.css';
   document.head.appendChild(style);
 
+  const qualityStyle = document.createElement('link');
+  qualityStyle.rel = 'stylesheet';
+  qualityStyle.href = './whonet-quality.css';
+  document.head.appendChild(qualityStyle);
+
   const navButtons = [...document.querySelectorAll('.nav-item')];
   const sectionView = () => document.getElementById('atlas-section-view');
   const breadcrumb = () => document.querySelector('.breadcrumb');
@@ -44,6 +49,7 @@
   const fmt = (n) => Math.round(n).toLocaleString('ru-RU');
   const pct = (n) => Number(n).toFixed(1).replace('.', ',') + '%';
   const riskClass = (n) => n >= 40 ? 'adv-high' : n >= 20 ? 'adv-mid' : 'adv-low';
+  const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
 
   function showView(html, crumb) {
     const view = sectionView();
@@ -173,6 +179,7 @@
     const rows=lines.slice(1).map(line=>parseDelimitedLine(line,delimiter));
     const upper=headers.map(h=>h.toUpperCase().replace(/\s+/g,'_'));
     const find=(cands)=>{ const i=upper.findIndex(h=>cands.some(c=>h===c || h.includes(c))); return i>=0?headers[i]:null; };
+    const patient=find(['PATIENT_ID','PATIENT','PAT_ID']);
     const organism=find(['ORGANISM','ORG','ORG_NAME']);
     const date=find(['SPEC_DATE','DATE_SPEC','SPECIMEN_DATE']);
     const material=find(['SPEC_TYPE','SPECIMEN','SAMPLE_TYPE']);
@@ -183,18 +190,91 @@
     if(!date) warnings.push('Не найдена дата образца');
     if(!material) warnings.push('Не найден тип материала');
     if(ast.length===0) warnings.push('Не обнаружены AST-колонки');
-    return {fileName, delimiter:delimiter==='\t'?'TAB':delimiter, headers, rows, organism, date, material, lab, ast, warnings};
+    const indexOf=(header)=>header ? headers.indexOf(header) : -1;
+    const indexes={patient:indexOf(patient),organism:indexOf(organism),date:indexOf(date),material:indexOf(material),lab:indexOf(lab)};
+    const knownOrganisms=new Set(['ESCHERICHIA COLI','E. COLI','ECOL','KLEBSIELLA PNEUMONIAE','K. PNEUMONIAE','KPNE','STAPHYLOCOCCUS AUREUS','S. AUREUS','SAUR','PSEUDOMONAS AERUGINOSA','P. AERUGINOSA','PAER','ACINETOBACTER BAUMANNII','A. BAUMANNII','ABAUM','ENTEROCOCCUS FAECIUM','E. FAECIUM','EFAE','STREPTOCOCCUS PNEUMONIAE','S. PNEUMONIAE','SPNE','SALMONELLA SPP.','SALMONELLA']);
+    const knownMaterials=new Set(['URINE','BLOOD','SPUTUM','RESPIRATORY','WOUND','STOOL','CSF','OTHER','МОЧА','КРОВЬ','МОКРОТА','РАНА','КАЛ','ЛИКВОР','ДРУГОЕ']);
+    const sirColumns=ast.filter((header)=>/(_NM|_SIR|_INT)$/i.test(header));
+    const measureColumns=ast.filter((header)=>/(_MIC|_ZONE|_ND)$/i.test(header));
+    const columnAt=(row,index)=>index >= 0 ? String(row[index] ?? '').trim() : '';
+    const normalizedDate=(value)=>{
+      const match=String(value).trim().match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$|^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+      if(!match) return null;
+      const year=Number(match[1]||match[6]), month=Number(match[2]||match[5]), day=Number(match[3]||match[4]);
+      const parsed=new Date(Date.UTC(year,month-1,day));
+      return parsed.getUTCFullYear()===year && parsed.getUTCMonth()===month-1 && parsed.getUTCDate()===day ? `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}` : null;
+    };
+    const issueMap={duplicate:[],unknownOrganism:[],unknownMaterial:[],invalidDate:[],invalidSir:[],sirWithoutMeasurement:[],missingRequired:[]};
+    const rowIssues=rows.map(()=>[]);
+    const seen=new Map();
+    rows.forEach((row,rowIndex)=>{
+      const displayRow=rowIndex+2;
+      const org=columnAt(row,indexes.organism);
+      const specimen=columnAt(row,indexes.material);
+      const specimenDate=columnAt(row,indexes.date);
+      const laboratory=columnAt(row,indexes.lab);
+      const patientId=columnAt(row,indexes.patient);
+      [['organism',org],['date',specimenDate],['material',specimen],['lab',laboratory]].forEach(([field,value])=>{
+        if(indexes[field] >= 0 && !value) { issueMap.missingRequired.push(displayRow); rowIssues[rowIndex].push('Пустое обязательное поле'); }
+      });
+      if(org && !knownOrganisms.has(org.toUpperCase())) { issueMap.unknownOrganism.push(displayRow); rowIssues[rowIndex].push(`Неизвестный организм: ${org}`); }
+      if(specimen && !knownMaterials.has(specimen.toUpperCase())) { issueMap.unknownMaterial.push(displayRow); rowIssues[rowIndex].push(`Неизвестный материал: ${specimen}`); }
+      if(specimenDate && !normalizedDate(specimenDate)) { issueMap.invalidDate.push(displayRow); rowIssues[rowIndex].push(`Некорректная дата: ${specimenDate}`); }
+      const sirValues=sirColumns.map((header)=>({header,value:columnAt(row,headers.indexOf(header)).toUpperCase()})).filter(item=>item.value);
+      const invalid=sirValues.filter(item=>!['S','I','R','SDD','NS'].includes(item.value));
+      if(invalid.length) { issueMap.invalidSir.push(displayRow); rowIssues[rowIndex].push(`Некорректный S/I/R: ${invalid.map(item=>item.value).join(', ')}`); }
+      const hasMeasurement=measureColumns.some((header)=>columnAt(row,headers.indexOf(header)));
+      if(sirValues.length && !hasMeasurement) { issueMap.sirWithoutMeasurement.push(displayRow); rowIssues[rowIndex].push('S/I/R без MIC или диаметра зоны'); }
+      const duplicateKey=[patientId,specimenDate,org,specimen,laboratory].map(value=>value.toUpperCase()).join('|');
+      if(patientId && specimenDate && org) {
+        if(seen.has(duplicateKey)) { issueMap.duplicate.push(displayRow); rowIssues[rowIndex].push(`Возможный дубликат строки ${seen.get(duplicateKey)}`); }
+        else seen.set(duplicateKey,displayRow);
+      }
+    });
+    const labs=new Map();
+    rows.forEach((row,rowIndex)=>{
+      const name=columnAt(row,indexes.lab)||'Не указана';
+      const current=labs.get(name)||{name,rows:0,issues:0};
+      current.rows+=1;
+      if(rowIssues[rowIndex].length) current.issues+=1;
+      labs.set(name,current);
+    });
+    const issueCounts=Object.fromEntries(Object.entries(issueMap).map(([key,value])=>[key,value.length]));
+    const affectedRows=rowIssues.filter(items=>items.length).length;
+    const blockers=issueCounts.missingRequired+issueCounts.invalidDate+issueCounts.invalidSir;
+    const totalChecks=Math.max(1,rows.length*5);
+    const qualityScore=Math.max(0,Math.round(100-(affectedRows/Math.max(1,rows.length))*55-(blockers/totalChecks)*45));
+    const readiness=blockers>0?'blocked':affectedRows>0?'review':'ready';
+    return {fileName, delimiter:delimiter==='\t'?'TAB':delimiter, headers, rows, patient, organism, date, material, lab, ast, warnings, issueMap, issueCounts, rowIssues, affectedRows, blockers, qualityScore, readiness, labs:[...labs.values()].sort((a,b)=>b.rows-a.rows)};
   }
   function renderWhonetAnalysis(a) {
     const status=sectionView()?.querySelector('#whonet-status');
     const preview=sectionView()?.querySelector('#whonet-preview');
     if(!status||!preview) return;
     const ok=a.warnings.length===0;
-    status.innerHTML=`<div class="file-status ${ok?'ok':'warn'}"><span>${ok?'✓':'!'}</span><div><strong>${a.fileName}</strong><p>${fmt(a.rows.length)} строк · ${a.headers.length} колонок · разделитель ${a.delimiter}</p></div></div><div class="detected-grid"><div><span>Организм</span><b>${a.organism||'не найден'}</b></div><div><span>Дата</span><b>${a.date||'не найдена'}</b></div><div><span>Материал</span><b>${a.material||'не найден'}</b></div><div><span>Лаборатория</span><b>${a.lab||'не найдена'}</b></div><div><span>AST колонки</span><b>${a.ast.length}</b></div><div><span>Статус</span><b>${ok?'готов к нормализации':'нужна проверка'}</b></div></div>${a.warnings.length?`<div class="warning-list">${a.warnings.map(w=>`<p>⚠ ${w}</p>`).join('')}</div>`:''}`;
+    const readyLabel=a.readiness==='ready'?'готов к нормализации':a.readiness==='review'?'нужна проверка':'есть блокирующие ошибки';
+    status.innerHTML=`<div class="file-status ${ok?'ok':'warn'}"><span>${ok?'✓':'!'}</span><div><strong>${escapeHtml(a.fileName)}</strong><p>${fmt(a.rows.length)} строк · ${a.headers.length} колонок · разделитель ${escapeHtml(a.delimiter)}</p></div></div><div class="detected-grid"><div><span>Организм</span><b>${escapeHtml(a.organism||'не найден')}</b></div><div><span>Дата</span><b>${escapeHtml(a.date||'не найдена')}</b></div><div><span>Материал</span><b>${escapeHtml(a.material||'не найден')}</b></div><div><span>Лаборатория</span><b>${escapeHtml(a.lab||'не найдена')}</b></div><div><span>AST колонки</span><b>${a.ast.length}</b></div><div><span>Статус</span><b>${readyLabel}</b></div></div>${a.warnings.length?`<div class="warning-list">${a.warnings.map(w=>`<p>⚠ ${escapeHtml(w)}</p>`).join('')}</div>`:''}`;
     const visible=a.headers.slice(0,8);
     preview.hidden=false;
-    preview.innerHTML=`<div class="adv-panel-head"><div><h2>Предпросмотр</h2><p>Первые ${Math.min(6,a.rows.length)} записей · максимум 8 колонок</p></div><button class="btn secondary" id="clear-whonet">Очистить</button></div><div class="preview-scroll"><table><thead><tr>${visible.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${a.rows.slice(0,6).map(r=>`<tr>${visible.map((h,i)=>`<td>${r[i]??''}</td>`).join('')}</tr>`).join('')}</tbody></table></div><div class="import-ready"><span>${ok?'✓':'!'}</span><div><strong>${ok?'Структура подходит для следующего этапа':'Есть замечания к структуре'}</strong><p>${ok?'Позже здесь появится кнопка записи нормализованных данных в PostgreSQL.':'Исправьте структуру или настройте соответствие колонок.'}</p></div><button class="btn primary" disabled>Импортировать в БД — позже</button></div>`;
+    const issueDefinitions=[['missingRequired','Пустые обязательные поля','Блокирует'],['invalidDate','Некорректные даты','Блокирует'],['invalidSir','Некорректные S/I/R','Блокирует'],['duplicate','Возможные дубликаты','Проверить'],['unknownOrganism','Неизвестные организмы','Сопоставить'],['unknownMaterial','Неизвестные материалы','Сопоставить'],['sirWithoutMeasurement','S/I/R без MIC/zone','Проверить']];
+    const issues=issueDefinitions.filter(([key])=>a.issueCounts[key]>0);
+    const readinessText=a.readiness==='ready'?'Файл готов к нормализации':a.readiness==='review'?'Файл требует проверки':'Файл пока не готов к импорту';
+    const readinessHint=a.readiness==='ready'?'Структура и записи прошли локальную проверку. Сохранение в БД отключено на этапе прототипа.':a.readiness==='review'?'Блокирующих ошибок нет, но перед импортом нужно проверить предупреждения.':'Исправьте блокирующие ошибки и повторите проверку.';
+    preview.innerHTML=`<div class="quality-overview"><article><span>Индекс качества</span><strong>${a.qualityScore}%</strong><i><u style="width:${a.qualityScore}%"></u></i></article><article><span>Строк с замечаниями</span><strong>${fmt(a.affectedRows)}</strong><small>из ${fmt(a.rows.length)}</small></article><article><span>Блокирующих ошибок</span><strong class="${a.blockers?'adv-high':'adv-low'}">${fmt(a.blockers)}</strong><small>дата, S/I/R, обязательные поля</small></article><article><span>Лабораторий</span><strong>${fmt(a.labs.length)}</strong><small>в загруженном файле</small></article></div>
+      <div class="quality-layout"><div><div class="adv-panel-head"><div><h2>Отчёт проверки</h2><p>Автоматические проверки строк до нормализации</p></div><span class="quality-readiness ${a.readiness}">${readyLabel}</span></div><div class="quality-issues">${issues.length?issues.map(([key,label,action])=>`<button type="button" data-quality-issue="${key}"><span>${escapeHtml(label)}</span><b>${fmt(a.issueCounts[key])}</b><em>${action}</em></button>`).join(''):'<div class="quality-empty">✓ Замечаний по записям не найдено</div>'}</div></div>
+      <aside class="lab-summary"><div class="adv-panel-head"><div><h2>Лаборатории</h2><p>Объём и доля строк с замечаниями</p></div></div>${a.labs.slice(0,6).map(lab=>`<div><span><strong>${escapeHtml(lab.name)}</strong><small>${fmt(lab.rows)} строк</small></span><b class="${lab.issues?'adv-mid':'adv-low'}">${Math.round(lab.issues/lab.rows*100)}%</b></div>`).join('')}</aside></div>
+      <div class="quality-detail" id="quality-detail" hidden></div>
+      <div class="adv-panel-head preview-heading"><div><h2>Предпросмотр</h2><p>Первые ${Math.min(6,a.rows.length)} записей · максимум 8 колонок</p></div><button class="btn secondary" id="clear-whonet">Очистить</button></div><div class="preview-scroll"><table><thead><tr><th>Статус</th>${visible.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${a.rows.slice(0,6).map((r,rowIndex)=>`<tr class="${a.rowIssues[rowIndex]?.length?'row-warning':''}"><td><span class="row-state">${a.rowIssues[rowIndex]?.length?'!':'✓'}</span></td>${visible.map((h,i)=>`<td>${escapeHtml(r[i]??'')}</td>`).join('')}</tr>`).join('')}</tbody></table></div><div class="import-ready ${a.readiness}"><span>${a.readiness==='ready'?'✓':'!'}</span><div><strong>${readinessText}</strong><p>${readinessHint}</p></div><button class="btn primary" disabled>Импортировать в БД — позже</button></div>`;
     preview.querySelector('#clear-whonet')?.addEventListener('click',()=>renderMethodsAdvanced());
+    preview.querySelectorAll('[data-quality-issue]').forEach(button=>button.addEventListener('click',()=>{
+      const key=button.dataset.qualityIssue;
+      const def=issueDefinitions.find(item=>item[0]===key);
+      const detail=preview.querySelector('#quality-detail');
+      const matching=a.rowIssues.map((items,index)=>({items,index})).filter(({index})=>a.issueMap[key].includes(index+2)).slice(0,12);
+      detail.hidden=false;
+      detail.innerHTML=`<div><strong>${escapeHtml(def?.[1]||'Замечания')}</strong><span>Показано ${matching.length} из ${a.issueCounts[key]} строк</span></div>${matching.map(({items,index})=>`<p><b>Строка ${index+2}</b><span>${items.map(escapeHtml).join(' · ')}</span></p>`).join('')}`;
+      detail.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }));
   }
   function wireWhonetImporter() {
     const input=sectionView()?.querySelector('#whonet-file');
@@ -211,7 +291,7 @@
     ['dragleave','drop'].forEach(evt=>drop?.addEventListener(evt,e=>{e.preventDefault();drop.classList.remove('drag');}));
     drop?.addEventListener('drop',e=>handleFile(e.dataTransfer?.files?.[0]));
     demo?.addEventListener('click',()=>{
-      const text='COUNTRY_A,LABORATORY,PATIENT_ID,SPEC_DATE,SPEC_TYPE,ORGANISM,AMP_NM,CRO_NM,CIP_NM,AMK_NM,MEM_NM\nKAZ,AST-LAB-01,P001,2026-09-01,Urine,Escherichia coli,R,R,R,S,S\nKAZ,AST-LAB-01,P002,2026-09-01,Blood,Klebsiella pneumoniae,R,R,I,S,S\nKAZ,KAR-LAB-02,P003,2026-09-02,Urine,Escherichia coli,R,I,R,S,S\nKAZ,ALA-LAB-03,P004,2026-09-02,Sputum,Pseudomonas aeruginosa,,R,R,I,I\nKAZ,AST-LAB-01,P005,2026-09-03,Blood,Staphylococcus aureus,,,,S,';
+      const text='COUNTRY_A,LABORATORY,PATIENT_ID,SPEC_DATE,SPEC_TYPE,ORGANISM,AMP_NM,CRO_NM,CIP_NM,AMK_NM,MEM_NM\nKAZ,AST-LAB-01,P001,2026-09-01,Urine,Escherichia coli,R,R,R,S,S\nKAZ,AST-LAB-01,P002,2026-09-01,Blood,Klebsiella pneumoniae,R,R,I,S,S\nKAZ,KAR-LAB-02,P003,2026-09-02,Urine,Escherichia coli,R,I,R,S,S\nKAZ,ALA-LAB-03,P004,2026-09-02,Sputum,Pseudomonas aeruginosa,,R,R,I,I\nKAZ,AST-LAB-01,P005,2026-09-03,Blood,Staphylococcus aureus,,,,S,\nKAZ,AST-LAB-01,P001,2026-09-01,Urine,Escherichia coli,R,R,R,S,S\nKAZ,KAR-LAB-02,P006,2026-13-04,Unknown sample,Unknown bacillus,X,R,,,S';
       renderWhonetAnalysis(analyzeText(text,'WHONET_demo_2026.csv'));
     });
   }
