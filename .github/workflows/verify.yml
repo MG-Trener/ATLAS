@@ -1,0 +1,36 @@
+name: Verify Atlas
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify TypeScript and public prototype
+        run: npm run verify
+
+      - name: Build production frontend
+        run: npm run build
+        env:
+          NEXT_PUBLIC_BASE_PATH: /ATLAS
