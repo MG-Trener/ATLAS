@@ -40,7 +40,21 @@
       const extra=document.createElement('link');extra.rel='stylesheet';extra.href='./atlas-readable-reference.css?v=20260916-1';extra.dataset.atlasReferenceReadable='1';document.head.appendChild(extra);
     }
   }
-  function boot(){mount();loadClinicalWorkbench();loadViewportAssets();loadReadableType()}
+  function loadScript(src,key,ready){
+    const existing=document.querySelector(`script[data-atlas-module="${key}"]`);
+    if(existing){if(existing.dataset.loaded==='1')ready?.();else existing.addEventListener('load',()=>ready?.(),{once:true});return}
+    const script=document.createElement('script');script.src=src;script.async=false;script.dataset.atlasModule=key;script.addEventListener('load',()=>{script.dataset.loaded='1';ready?.()},{once:true});script.addEventListener('error',()=>ready?.(),{once:true});document.body.appendChild(script);
+  }
+  function loadRegionalAnalysis(){
+    if(!pathConcept())return;
+    if(!document.querySelector('link[data-atlas-regional-analysis]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./regional-analysis.css?v=20260916-1';style.dataset.atlasRegionalAnalysis='1';document.head.appendChild(style)}
+    const afterContext=()=>{
+      const afterData=()=>{if(window.__atlasRegionalAnalysis)return;loadScript('./regional-analysis.js?v=20260916-1','regional-analysis')};
+      if(window.AtlasDemoData)afterData();else loadScript('./amr-demo-data.js?v=20260916-1','demo-data',afterData);
+    };
+    if(window.AtlasAnalysisContext)afterContext();else loadScript('./analysis-context.js?v=20260916-2','analysis-context',afterContext);
+  }
+  function boot(){mount();loadClinicalWorkbench();loadViewportAssets();loadReadableType();loadRegionalAnalysis()}
   selectConcept(current(),false);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
   document.addEventListener('atlas:language-changed',refresh);
