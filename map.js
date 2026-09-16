@@ -37,9 +37,15 @@
   let view = { x: 0, y: 0, w: 620, h: 340 };
   let selectedRegionName = '';
 
+  const i18n = () => window.AtlasPreviewI18n;
+  const translate = (value) => i18n()?.translate(value) || value;
+  const regionDisplayName = (region) => i18n()?.regionName(region) || region.name_kk || region.name_en || '';
+  const locale = () => i18n()?.language === 'en' ? 'en-US' : i18n()?.language === 'kk' ? 'kk-KZ' : 'ru-RU';
+  const decimal = (value) => Number(value).toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
   const loading = document.createElement('div');
   loading.className = 'amr-map-loading';
-  loading.textContent = 'Загрузка контуров регионов Казахстана…';
+  loading.textContent = translate('Загрузка контуров регионов Казахстана…');
   target.appendChild(loading);
 
   const tooltip = document.createElement('div');
@@ -52,6 +58,10 @@
 
   function activeAntibiotic() {
     return antibioticSelect?.value || 'Цефтриаксон';
+  }
+
+  function activeAntibioticLabel() {
+    return translate(activeAntibiotic());
   }
 
   function hash(input) {
@@ -105,23 +115,29 @@
 
   function tooltipHtml(region) {
     const stats = statsFor(region);
-    return `<strong>${region.name_kk}</strong><span>${activeAntibiotic()} · R <b>${stats.resistance.toFixed(1).replace('.', ',')}%</b></span><span>Изолятов <b>${stats.isolates.toLocaleString('ru-RU')}</b></span>`;
+    return `<strong>${regionDisplayName(region)}</strong><span>${activeAntibioticLabel()} · R <b>${decimal(stats.resistance)}%</b></span><span>${translate('Изолятов')} <b>${stats.isolates.toLocaleString(locale())}</b></span>`;
   }
 
   function popupHtml(region) {
     const stats = statsFor(region);
     const direction = stats.delta >= 0 ? '↑' : '↓';
-    return `<button class="svg-popup-close" aria-label="Закрыть">×</button>
-      <span class="popup-kicker">E. coli · ${activeAntibiotic()} · демо</span>
-      <h3>${region.name_kk}</h3>
-      <small>${region.name_en || ''}</small>
+    const pp = i18n()?.language === 'en' ? 'pp' : i18n()?.language === 'kk' ? 'т.п.' : 'п.п.';
+    const baseline = i18n()?.language === 'en'
+      ? 'vs indicative baseline. Demo data.'
+      : i18n()?.language === 'kk'
+        ? 'шартты базалық деңгейге қатысты. Деректер демонстрациялық.'
+        : 'к условному базовому уровню. Данные демонстрационные.';
+    return `<button class="svg-popup-close" aria-label="${translate('Закрыть')}">×</button>
+      <span class="popup-kicker">E. coli · ${activeAntibioticLabel()} · ${translate('демонстрационные данные')}</span>
+      <h3>${regionDisplayName(region)}</h3>
+      <small>${region.pcode || region.name_en || ''}</small>
       <div class="popup-grid">
-        <div><span>R</span><strong>${stats.resistance.toFixed(1).replace('.', ',')}%</strong></div>
-        <div><span>Изоляты</span><strong>${stats.isolates.toLocaleString('ru-RU')}</strong></div>
-        <div><span>Лаб.</span><strong>${stats.labs}</strong></div>
+        <div><span>R</span><strong>${decimal(stats.resistance)}%</strong></div>
+        <div><span>${translate('Изоляты')}</span><strong>${stats.isolates.toLocaleString(locale())}</strong></div>
+        <div><span>${translate('Лаб.')}</span><strong>${stats.labs}</strong></div>
       </div>
-      <p>${direction} ${Math.abs(stats.delta).toFixed(1).replace('.', ',')} п.п. к условному базовому уровню. Данные демонстрационные.</p>
-      <button class="region-apply-button" type="button">Регион применён ко всему обзору ✓</button>`;
+      <p>${direction} ${decimal(Math.abs(stats.delta))} ${pp} ${baseline}</p>
+      <button class="region-apply-button" type="button">${translate('Регион применён ко всему обзору ✓')}</button>`;
   }
 
   function applyViewBox(svg) {
@@ -144,7 +160,7 @@
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.classList.add('atlas-svg-map');
     svg.setAttribute('role', 'img');
-    svg.setAttribute('aria-label', 'Интерактивная карта регионов Казахстана');
+    svg.setAttribute('aria-label', translate('Интерактивная карта регионов Казахстана'));
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     applyViewBox(svg);
 
@@ -163,6 +179,8 @@
       path.setAttribute('fill', colorFor(stats.resistance));
       path.setAttribute('data-pcode', region.pcode || '');
       path.dataset.regionName = region.name_kk || '';
+      path.setAttribute('aria-label', `${regionDisplayName(region)}: R ${decimal(stats.resistance)}%`);
+      path.setAttribute('tabindex', '0');
       path.classList.add('atlas-region');
       if (selectedRegionName === region.name_kk) path.classList.add('selected');
 
@@ -182,12 +200,18 @@
         popup.innerHTML = popupHtml(region);
         popup.classList.add('show');
         document.dispatchEvent(new CustomEvent('atlas:region-selected', {
-          detail: { name: region.name_kk, nameEn: region.name_en || '', pcode: region.pcode || '' },
+          detail: { name: region.name_kk, displayName: regionDisplayName(region), nameEn: region.name_en || '', pcode: region.pcode || '' },
         }));
         popup.querySelector('.svg-popup-close')?.addEventListener('click', (event) => {
           event.stopPropagation();
           popup.classList.remove('show');
         });
+      });
+      path.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          path.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        }
       });
 
       svg.appendChild(path);
@@ -205,7 +229,7 @@
 
     const controls = document.createElement('div');
     controls.className = 'svg-map-controls';
-    controls.innerHTML = '<button data-action="in" aria-label="Приблизить">+</button><button data-action="out" aria-label="Отдалить">−</button><button data-action="reset" aria-label="Сбросить масштаб">⌂</button>';
+    controls.innerHTML = `<button data-action="in" aria-label="${translate('Приблизить')}">+</button><button data-action="out" aria-label="${translate('Отдалить')}">−</button><button data-action="reset" aria-label="${translate('Сбросить масштаб')}">⌂</button>`;
     controls.addEventListener('click', (event) => {
       const button = event.target.closest('button');
       if (!button) return;
@@ -238,8 +262,14 @@
 
   function renderFallback() {
     loading?.remove();
-    target.innerHTML = `<div class="amr-map-error">Интерактивные контуры временно недоступны. Используется резервное изображение карты.</div>
-      <img class="atlas-map-fallback" alt="Карта регионов Казахстана" src="https://cdn.jsdelivr.net/gh/galymorg/new_qazaqstan_GeoJSON@main/kazakhstan-regions-map-accurate.svg">`;
+    target.innerHTML = `<div class="amr-map-error">${translate('Интерактивные контуры временно недоступны. Используется резервное изображение карты.')}</div>
+      <img class="atlas-map-fallback" alt="${translate('Карта регионов Казахстана')}" src="https://cdn.jsdelivr.net/gh/galymorg/new_qazaqstan_GeoJSON@main/kazakhstan-regions-map-accurate.svg">`;
+  }
+
+  function updateCaption() {
+    if (!caption) return;
+    const demo = i18n()?.language === 'en' ? 'demo values' : i18n()?.language === 'kk' ? 'демонстрациялық мәндер' : 'демонстрационные значения';
+    caption.textContent = `${activeAntibioticLabel()} · ${translate('Казахстан')} · 2026 · ${demo}`;
   }
 
   loadRegions()
@@ -247,9 +277,10 @@
       regions = data;
       loading.remove();
       await dashboardReady;
-      if (sourceLabel) sourceLabel.textContent = url.startsWith('./')
+      if (sourceLabel) sourceLabel.textContent = translate(url.startsWith('./')
         ? 'Локальная геометрия · 17 областей + 3 города · hover и клик активны'
-        : 'Пробная геометрия 2024 · 17 областей + 3 города · hover и клик активны';
+        : 'Пробная геометрия 2024 · 17 областей + 3 города · hover и клик активны');
+      updateCaption();
       render();
       document.dispatchEvent(new CustomEvent('atlas:map-ready', { detail: { regions } }));
     })
@@ -262,9 +293,15 @@
     selectPathByRegion(event.detail?.name || '');
   });
 
+  document.addEventListener('atlas:language-changed', () => {
+    loading.textContent = translate('Загрузка контуров регионов Казахстана…');
+    updateCaption();
+    if (regions.length) render();
+  });
+
   if (antibioticSelect) {
     antibioticSelect.addEventListener('change', () => {
-      if (caption) caption.textContent = `${activeAntibiotic()} · Казахстан · 2026 · демонстрационные значения`;
+      updateCaption();
       if (regions.length) render();
     });
   }
