@@ -47,7 +47,7 @@
     const i=clamp(3.2+(hash(`${organism}:${drug}:i`)%54)/10,1.5,11.5);
     const s=clamp(100-r-i,0,98);
     const materialPenalty=material==='all'?1:.54;
-    const periodPenalty=period==='2026'?1:period.includes('12')?.88:period.includes('2024')?.76:1;
+    const periodPenalty=period==='2026'?1:(period.includes('12')?.88:(period.includes('2024')?.76:1));
     const n=Math.max(28,Math.round(sampleBase(pcode,organism)*materialPenalty*periodPenalty*(.72+(hash(`${drug}:n`)%40)/100)));
     const mdr=clamp((r*.31)+(hash(`${organism}:${pcode}:mdr`)%60)/10-2,1,48);
     const trend=years.map((year,index)=>{
