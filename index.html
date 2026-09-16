@@ -4,14 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#f4f8fc" />
-  <script>try{document.documentElement.dataset.atlasTheme=localStorage.getItem('atlas-ui-theme')||'clinical'}catch(e){document.documentElement.dataset.atlasTheme='clinical'}</script>
-  <title>AMR Atlas — визуальный прототип</title>
-  <meta name="description" content="AMR Atlas — прототип платформы мониторинга антимикробной резистентности" />
+  <title>AMR Atlas — Clinical Workspace</title>
+  <meta name="description" content="AMR Atlas — рабочая концепция платформы мониторинга антимикробной резистентности" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <link rel="stylesheet" href="./preview.css" />
   <link rel="stylesheet" href="./map.css" />
   <link rel="stylesheet" href="./preview-i18n.css" />
-  <link rel="stylesheet" href="./atlas-themes.css?v=20260916-1" />
+  <link rel="stylesheet" href="./atlas-themes.css?v=20260916-4" />
 </head>
 <body>
   <div class="shell">
@@ -44,7 +43,7 @@
         <strong>Научный мониторинг</strong>
         <p>Локальные данные, динамика резистентности и ранние сигналы AMR в одном интерфейсе.</p>
       </div>
-      <div class="side-footer">Казахстан · frontend prototype v0.3</div>
+      <div class="side-footer">Казахстан · Clinical Workspace prototype</div>
     </aside>
 
     <main class="workspace">
@@ -119,7 +118,7 @@
                 <span><i style="background:#e6a94e"></i>30–40%</span>
                 <span><i style="background:#d95f67"></i>≥40%</span>
               </div>
-              <div class="amr-map-source">Пробная геометрия: geoBoundaries ADM1 (2017) · hover и клик активны</div>
+              <div class="amr-map-source">Точные административные контуры 2024 · hover и клик активны</div>
             </div>
           </article>
 
@@ -166,11 +165,11 @@
             <div class="quality-row"><span>Своевременность</span><i><u style="width:87%"></u></i><b>87%</b></div>
             <div class="quality-row"><span>Лабораторное покрытие</span><i><u style="width:76%"></u></i><b>76%</b></div>
             <div class="quality-row"><span>Соответствие стандартам</span><i><u style="width:94%"></u></i><b>94%</b></div>
-            <div class="source-box"><strong>Источник на этапе прототипа</strong><span>Демонстрационные AMR-значения. Геометрия карты — geoBoundaries ADM1; далее — актуальные границы и импорт WHONET.</span></div>
+            <div class="source-box"><strong>Источник на этапе прототипа</strong><span>Справочники подключены к Supabase. AMR-значения на обзорных экранах пока демонстрационные.</span></div>
           </article>
         </div>
 
-        <footer class="footer"><span>AMR Atlas · визуальный прототип</span><span>Без БД · данные демонстрационные · подготовлено для интеграции WHONET</span><span class="live"><i></i>Интерфейс активен</span></footer>
+        <footer class="footer"><span>AMR Atlas · Clinical Workspace</span><span>Supabase для справочников · AMR-данные демонстрационные</span><span class="live"><i></i>Интерфейс активен</span></footer>
       </section>
     </main>
   </div>
@@ -196,7 +195,7 @@
       }
     });
   </script>
-  <script src="./atlas-themes.js?v=20260916-1"></script>
+  <script src="./atlas-themes.js?v=20260916-4"></script>
   <script src="./preview-i18n.js"></script>
   <script src="./map.js"></script>
 </body>
