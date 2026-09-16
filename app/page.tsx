@@ -67,6 +67,19 @@ export default function Page() {
           Справочники
         </Link>
         <Link
+          href="/about"
+          style={{
+            ...baseButton,
+            minHeight: 34,
+            border: "1px solid #cfe1f2",
+            background: "#f5faff",
+            color: "#345f8a",
+            fontSize: 10,
+          }}
+        >
+          О платформе · методология
+        </Link>
+        <Link
           href="/whonet"
           style={{
             ...baseButton,
