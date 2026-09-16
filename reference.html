@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f4f8fc" />
+  <title>AMR Atlas — справочник</title>
+  <meta name="description" content="Полный справочник WHONET микроорганизмов и антимикробных препаратов в AMR Atlas" />
+  <link rel="stylesheet" href="./preview.css" />
+  <link rel="stylesheet" href="./preview-i18n.css" />
+  <link rel="stylesheet" href="./reference-static.css" />
+</head>
+<body class="reference-page">
+  <div class="shell">
+    <aside class="sidebar reference-sidebar">
+      <a class="brand reference-brand" href="./index.html">
+        <div class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div><strong>AMR Atlas</strong><small data-i18n="brandSub">Данные сегодня.<br>Здоровье завтра.</small></div>
+      </a>
+      <nav class="nav reference-nav">
+        <a class="nav-item" href="./index.html"><span>⌂</span><span data-i18n="dashboard">Обзор</span></a>
+        <button class="nav-item active" type="button" data-tab="organisms"><span>◉</span><span data-i18n="organisms">Микроорганизмы</span></button>
+        <button class="nav-item" type="button" data-tab="antimicrobials"><span>◇</span><span data-i18n="antimicrobials">Антимикробные препараты</span></button>
+        <a class="nav-item" href="./index.html#map-section"><span>⌖</span><span data-i18n="map">Карта</span></a>
+      </nav>
+      <div class="side-spacer"></div>
+      <div class="side-callout reference-callout">
+        <strong data-i18n="sourceTitle">Источник справочника</strong>
+        <p>WHONET / AMRIE<br><b>snapshot 15.09.2026</b><br><code>aa499717…</code></p>
+      </div>
+      <div class="side-footer">Supabase · read-only catalog</div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar reference-topbar">
+        <div class="reference-status"><i></i><span data-i18n="liveDb">Supabase подключена</span></div>
+        <div class="top-actions">
+          <div class="language-switch" role="group" aria-label="Language">
+            <button type="button" data-lang="ru">RU</button>
+            <button type="button" data-lang="kk">KZ</button>
+            <button type="button" data-lang="en">EN</button>
+          </div>
+          <a class="back-dashboard" href="./index.html" data-i18n="back">← В обзор</a>
+        </div>
+      </header>
+
+      <section class="reference-content">
+        <div class="breadcrumb"><span data-i18n="atlas">AMR Atlas</span> <span>›</span> <strong data-i18n="reference">Справочники</strong></div>
+
+        <section class="reference-hero">
+          <div>
+            <span class="reference-eyebrow">WHONET · SUPABASE</span>
+            <h1 data-i18n="title">Справочник микроорганизмов и антимикробных препаратов</h1>
+            <p data-i18n="subtitle">Полный структурированный каталог WHONET с таксономией, кодами, классификацией AWaRe и расширенными клиническими описаниями.</p>
+          </div>
+          <div class="reference-version">
+            <span data-i18n="activeVersion">Активная версия</span>
+            <strong>WHONET / AMRIE</strong>
+            <small>2026-09-15 · aa499717</small>
+          </div>
+        </section>
+
+        <section class="reference-kpis">
+          <article><span>◉</span><div><small data-i18n="organismCodes">WHONET-кодов микроорганизмов</small><strong id="organism-count">2 381</strong><em data-i18n="fullSource">полный источник</em></div></article>
+          <article><span>◇</span><div><small data-i18n="drugCodes">Кодов антимикробных препаратов</small><strong id="antimicrobial-count">401</strong><em>ATC · AWaRe · LOINC</em></div></article>
+          <article><span>✓</span><div><small data-i18n="accessMode">Доступ с сайта</small><strong data-i18n="readOnly">Только чтение</strong><em>RLS + publishable key</em></div></article>
+        </section>
+
+        <section class="reference-tabs" aria-label="Catalog type">
+          <button type="button" class="active" data-tab="organisms"><span>◉</span><b data-i18n="organisms">Микроорганизмы</b><em>2 381</em></button>
+          <button type="button" data-tab="antimicrobials"><span>◇</span><b data-i18n="antimicrobials">Антимикробные препараты</b><em>401</em></button>
+        </section>
+
+        <section class="reference-toolbar">
+          <label class="reference-search"><span>⌕</span><input id="reference-search" type="search" autocomplete="off" data-i18n-placeholder="searchOrganisms" placeholder="Код, название, род, семейство…" /></label>
+          <select id="filter-primary" aria-label="Primary filter"><option value="">Все</option></select>
+          <select id="filter-secondary" aria-label="Secondary filter"><option value="">Все</option></select>
+          <button id="clear-filters" class="clear-filters" type="button" data-i18n="reset">Сбросить</button>
+        </section>
+
+        <section class="reference-main">
+          <article class="reference-list-panel">
+            <div class="reference-list-head">
+              <div><h2 id="list-title" data-i18n="organisms">Микроорганизмы</h2><p id="result-summary">—</p></div>
+              <label><span data-i18n="perPage">На странице</span><select id="page-size"><option>25</option><option selected>50</option><option>100</option></select></label>
+            </div>
+            <div id="catalog-loading" class="catalog-loading"><span></span><b data-i18n="loading">Загрузка справочника из Supabase…</b></div>
+            <div id="catalog-error" class="catalog-error" hidden></div>
+            <div id="catalog-list" class="catalog-list" hidden></div>
+            <div class="reference-pagination">
+              <button id="prev-page" type="button">← <span data-i18n="prev">Назад</span></button>
+              <span id="page-label">1 / 1</span>
+              <button id="next-page" type="button"><span data-i18n="next">Далее</span> →</button>
+            </div>
+          </article>
+
+          <aside class="reference-detail" id="reference-detail">
+            <div class="detail-empty">
+              <span>◎</span><strong data-i18n="selectRecord">Выберите запись</strong><p data-i18n="selectRecordText">Справа появятся описание, классификация, коды и клиническая значимость.</p>
+            </div>
+          </aside>
+        </section>
+
+        <section class="reference-note">
+          <span>i</span><div><strong data-i18n="descriptionPolicy">Как устроены описания</strong><p data-i18n="descriptionPolicyText">Для всех записей доступно структурированное описание из WHONET. Для ключевых AMR-патогенов и препаратов мы постепенно добавляем расширенный клинический текст на русском, казахском и английском языках.</p></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="./supabase-config.js"></script>
+  <script src="./reference.js"></script>
+</body>
+</html>
