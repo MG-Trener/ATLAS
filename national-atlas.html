@@ -7,24 +7,15 @@
   <title>AMR Atlas — National Atlas</title>
   <meta name="description" content="Картографическая концепция национального атласа антимикробной резистентности Казахстана" />
   <link rel="stylesheet" href="./national-atlas.css?v=20260916-2" />
-  <link rel="stylesheet" href="./atlas-themes.css?v=20260916-5" />
+  <link rel="stylesheet" href="./atlas-themes.css?v=20260916-6" />
+  <link rel="stylesheet" href="./viewport-layout.css?v=20260916-1" />
+  <link rel="stylesheet" href="./viewport-tuning.css?v=20260916-1" />
 </head>
 <body class="national-atlas-page">
   <header class="atlas-header">
-    <a class="atlas-brand" href="./national-atlas.html">
-      <span class="atlas-symbol">✣</span>
-      <span><strong>AMR ATLAS</strong><small>Казахстан · национальный обзор</small></span>
-    </a>
-    <nav class="atlas-nav">
-      <a class="active" href="#atlas-map-stage">Карта</a>
-      <a href="./reference.html">Справочник</a>
-      <a href="./mechanisms.html">Механизмы</a>
-      <a href="#atlas-story">Показатели</a>
-    </nav>
-    <div class="atlas-actions">
-      <div class="atlas-language"><button class="active">RU</button><button>KZ</button><button>EN</button></div>
-      <div class="top-actions"><div class="language-switch" hidden></div></div>
-    </div>
+    <a class="atlas-brand" href="./national-atlas.html"><span class="atlas-symbol">✣</span><span><strong>AMR ATLAS</strong><small>Казахстан · национальный обзор</small></span></a>
+    <nav class="atlas-nav"><a class="active" href="#atlas-map-stage">Карта</a><a href="./reference.html">Справочник</a><a href="./mechanisms.html">Механизмы</a><a href="#atlas-story">Показатели</a></nav>
+    <div class="atlas-actions"><div class="atlas-language"><button class="active">RU</button><button>KZ</button><button>EN</button></div><div class="top-actions"><div class="language-switch" hidden></div></div></div>
   </header>
 
   <main class="atlas-stage" id="atlas-map-stage">
@@ -37,21 +28,17 @@
       <article class="atlas-selected-card"><div class="selected-head"><span id="atlas-region-code">KZ</span><small>выбранная территория</small></div><h2 id="atlas-region-name">Казахстан</h2><div class="selected-metrics"><div><strong id="atlas-r">29,8%</strong><span>R</span></div><div><strong id="atlas-mdr">12,4%</strong><span>MDR</span></div><div><strong id="atlas-isolates">186 742</strong><span>изолятов</span></div></div><div class="selected-signal"><span></span><p id="atlas-signal">Демонстрационный национальный профиль. Выберите область или город на карте.</p></div></article>
     </section>
 
-    <section class="atlas-map-canvas">
-      <div class="atlas-map-title"><span>Казахстан</span><small id="atlas-layer-caption">Резистентность · демонстрационные значения</small></div>
-      <svg id="national-kz-map" viewBox="0 0 620 340" role="img" aria-label="Интерактивная карта Казахстана"></svg>
-      <div id="national-map-tooltip" class="national-map-tooltip"></div>
-      <div class="atlas-map-legend"><span><i class="l1"></i>низкая</span><span><i class="l2"></i>умеренная</span><span><i class="l3"></i>высокая</span><span><i class="l4"></i>очень высокая</span></div>
-      <div class="atlas-map-note">Административные контуры 2024 · значения прототипа демонстрационные</div>
-    </section>
+    <section class="atlas-map-canvas"><div class="atlas-map-title"><span>Казахстан</span><small id="atlas-layer-caption">Резистентность · демонстрационные значения</small></div><svg id="national-kz-map" viewBox="0 0 620 340" role="img" aria-label="Интерактивная карта Казахстана"></svg><div id="national-map-tooltip" class="national-map-tooltip"></div><div class="atlas-map-legend"><span><i class="l1"></i>низкая</span><span><i class="l2"></i>умеренная</span><span><i class="l3"></i>высокая</span><span><i class="l4"></i>очень высокая</span></div><div class="atlas-map-note">Административные контуры 2024 · значения прототипа демонстрационные</div></section>
 
     <aside class="atlas-insight-rail"><div class="rail-label">В ФОКУСЕ</div><article><span class="risk red"></span><div><strong>K. pneumoniae</strong><small>карбапенемы</small></div><b>↑ 5,4 п.п.</b></article><article><span class="risk amber"></span><div><strong>ESBL Enterobacterales</strong><small>Абай</small></div><b>34,8%</b></article><article><span class="risk blue"></span><div><strong>S. aureus</strong><small>MRSA мониторинг</small></div><b>14,2%</b></article><a href="./mechanisms.html">Открыть механизмы AMR →</a></aside>
   </main>
 
   <section class="atlas-bottom-band"><div class="band-title"><span>Национальный тренд</span><small>2020 → 2026</small></div><div class="band-trend"><svg viewBox="0 0 500 90" preserveAspectRatio="none"><polyline points="0,78 83,70 166,58 249,48 332,35 415,23 500,12"/></svg><div><b>20,4%</b><b>21,8%</b><b>23,2%</b><b>24,7%</b><b>26,1%</b><b>27,4%</b><b>29,8%</b></div></div><div class="band-pathogens"><span>Приоритет</span><b>E. coli</b><b>K. pneumoniae</b><b>A. baumannii</b><b>P. aeruginosa</b></div></section>
 
-  <script src="./atlas-themes.js?v=20260916-5"></script>
+  <script src="./atlas-themes.js?v=20260916-6"></script>
+  <script src="./viewport-layout.js?v=20260916-1"></script>
   <script src="./regions-loader.js?v=20260916-1"></script>
   <script src="./national-atlas.js?v=20260916-3"></script>
+  <script src="./analysis-context.js?v=20260916-1"></script>
 </body>
 </html>
