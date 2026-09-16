@@ -21,8 +21,13 @@
   function renderPopover(){let p=document.querySelector('.theme-popover');if(!p){p=document.createElement('div');p.className='theme-popover';p.hidden=true;document.body.appendChild(p)}p.innerHTML=`<div class="theme-popover-head"><div><strong>${t().title}</strong><small>${t().hint}</small></div><button class="theme-popover-close" type="button" aria-label="Close">×</button></div><div class="concept-grid">${CONCEPTS.map(card).join('')}</div>`;p.querySelector('.theme-popover-close')?.addEventListener('click',()=>p.hidden=true);p.querySelectorAll('[data-concept]').forEach(btn=>btn.addEventListener('click',()=>selectConcept(btn.dataset.concept,true)));return p}
   function mount(){const actions=document.querySelector('.top-actions');if(!actions)return;let trigger=actions.querySelector('.theme-trigger');if(!trigger){trigger=document.createElement('button');trigger.type='button';trigger.className='theme-trigger';const languageSwitch=actions.querySelector('.language-switch');if(languageSwitch?.nextSibling)actions.insertBefore(trigger,languageSwitch.nextSibling);else actions.prepend(trigger)}trigger.innerHTML=`<span class="theme-dot"></span><span>${t().button}</span>`;trigger.setAttribute('aria-label',t().title);trigger.onclick=()=>{const p=renderPopover();p.hidden=!p.hidden}}
   function refresh(){mount();const p=document.querySelector('.theme-popover');if(p&&!p.hidden)renderPopover()}
+  function loadClinicalWorkbench(){
+    if(pathConcept()!=='clinical'||document.querySelector('link[data-atlas-clinical]'))return;
+    const style=document.createElement('link');style.rel='stylesheet';style.href='./clinical-workspace.css?v=20260916-1';style.dataset.atlasClinical='1';document.head.appendChild(style);
+    const script=document.createElement('script');script.src='./clinical-workspace.js?v=20260916-1';script.dataset.atlasClinical='1';document.body.appendChild(script);
+  }
   selectConcept(current(),false);
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{mount();loadClinicalWorkbench()},{once:true});else{mount();loadClinicalWorkbench()}
   document.addEventListener('atlas:language-changed',refresh);
   document.addEventListener('click',e=>{if(e.target.closest?.('[data-lang]'))setTimeout(refresh,0);const p=document.querySelector('.theme-popover');const tr=document.querySelector('.theme-trigger');if(!p||p.hidden||p.contains(e.target)||tr?.contains(e.target))return;p.hidden=true});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){const p=document.querySelector('.theme-popover');if(p)p.hidden=true}});
