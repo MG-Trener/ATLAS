@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import AtlasGlobalNav from "./components/AtlasGlobalNav";
+import { AtlasLanguageProvider } from "./i18n/AtlasLanguage";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,8 +12,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ru">
       <body>
-        {children}
-        <AtlasGlobalNav />
+        <AtlasLanguageProvider>
+          {children}
+          <AtlasGlobalNav />
+        </AtlasLanguageProvider>
       </body>
     </html>
   );
