@@ -30,7 +30,7 @@ export default function Page() {
         }}
       >
         <Link
-          href="/insights"
+          href="/overview"
           style={{
             ...baseButton,
             border: "1px solid #075ec7",
@@ -38,7 +38,20 @@ export default function Page() {
             color: "#fff",
           }}
         >
-          Карта · аналитика →
+          Национальный обзор →
+        </Link>
+        <Link
+          href="/insights"
+          style={{
+            ...baseButton,
+            minHeight: 34,
+            border: "1px solid #bcdcf9",
+            background: "#eaf5ff",
+            color: "#195a96",
+            fontSize: 10,
+          }}
+        >
+          Карта · аналитика
         </Link>
         <Link
           href="/reference"
