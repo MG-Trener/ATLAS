@@ -160,13 +160,28 @@
     return entry ? entry[language] : value;
   }
 
+  const isWordChar = (value) => /[\p{L}\p{N}]/u.test(value || '');
+  function replaceFragment(value, source, target) {
+    let output = '';
+    let cursor = 0;
+    let match;
+    while ((match = value.indexOf(source, cursor)) !== -1) {
+      const before = value[match - 1] || '';
+      const after = value[match + source.length] || '';
+      const insideWord = (isWordChar(source[0]) && isWordChar(before)) || (isWordChar(source[source.length - 1]) && isWordChar(after));
+      output += value.slice(cursor, match) + (insideWord ? source : target);
+      cursor = match + source.length;
+    }
+    return output + value.slice(cursor);
+  }
+
   function translateFragments(value) {
     let output = value;
     const sorted = allEntries.slice().sort((a, b) => Math.max(b.ru.length, b.kk.length, b.en.length) - Math.max(a.ru.length, a.kk.length, a.en.length));
     sorted.forEach((entry) => {
       LANGS.forEach((lang) => {
         const source = entry[lang];
-        if (source && source !== entry[language] && output.includes(source)) output = output.split(source).join(entry[language]);
+        if (source && source !== entry[language] && output.includes(source)) output = replaceFragment(output, source, entry[language]);
       });
     });
     if (language === 'kk') {

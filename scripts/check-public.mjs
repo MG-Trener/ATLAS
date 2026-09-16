@@ -52,6 +52,7 @@ if (existsSync(file('atlas-i18n-extensions.js'))) {
 if (existsSync(file('preview-i18n.js'))) {
   const previewI18n=readFileSync(file('preview-i18n.js'),'utf8');
   if (!/registerTranslations/.test(previewI18n)) fail('preview-i18n.js: shared translation registry is missing');
+  if (!/insideWord/.test(previewI18n)) fail('preview-i18n.js: fragment translations must respect word boundaries');
 }
 
 if (existsSync(file('index.html'))) {
