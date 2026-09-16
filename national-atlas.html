@@ -7,7 +7,7 @@
   <title>AMR Atlas — National Atlas</title>
   <meta name="description" content="Картографическая концепция национального атласа антимикробной резистентности Казахстана" />
   <link rel="stylesheet" href="./national-atlas.css?v=20260916-2" />
-  <link rel="stylesheet" href="./atlas-themes.css?v=20260916-4" />
+  <link rel="stylesheet" href="./atlas-themes.css?v=20260916-5" />
 </head>
 <body class="national-atlas-page">
   <header class="atlas-header">
@@ -32,30 +32,9 @@
       <span class="atlas-kicker">NATIONAL AMR ATLAS · DEMO</span>
       <h1>Антимикробная резистентность<br><em>на карте Казахстана</em></h1>
       <p>Выберите регион — карта становится навигацией по локальной эпидемиологической картине, приоритетным патогенам и ключевым механизмам AMR.</p>
-
-      <div class="atlas-mode-switch">
-        <button class="active" data-layer="resistance">Резистентность</button>
-        <button data-layer="esbl">ESBL</button>
-        <button data-layer="cre">CRE</button>
-        <button data-layer="mrsa">MRSA</button>
-      </div>
-
-      <div class="atlas-national-stats">
-        <div><strong>29,8%</strong><span>средняя R</span></div>
-        <div><strong>12,4%</strong><span>MDR</span></div>
-        <div><strong>20/20</strong><span>территорий</span></div>
-      </div>
-
-      <article class="atlas-selected-card">
-        <div class="selected-head"><span id="atlas-region-code">KZ</span><small>выбранная территория</small></div>
-        <h2 id="atlas-region-name">Казахстан</h2>
-        <div class="selected-metrics">
-          <div><strong id="atlas-r">29,8%</strong><span>R</span></div>
-          <div><strong id="atlas-mdr">12,4%</strong><span>MDR</span></div>
-          <div><strong id="atlas-isolates">186 742</strong><span>изолятов</span></div>
-        </div>
-        <div class="selected-signal"><span></span><p id="atlas-signal">Демонстрационный национальный профиль. Выберите область или город на карте.</p></div>
-      </article>
+      <div class="atlas-mode-switch"><button class="active" data-layer="resistance">Резистентность</button><button data-layer="esbl">ESBL</button><button data-layer="cre">CRE</button><button data-layer="mrsa">MRSA</button></div>
+      <div class="atlas-national-stats"><div><strong>29,8%</strong><span>средняя R</span></div><div><strong>12,4%</strong><span>MDR</span></div><div><strong>20/20</strong><span>территорий</span></div></div>
+      <article class="atlas-selected-card"><div class="selected-head"><span id="atlas-region-code">KZ</span><small>выбранная территория</small></div><h2 id="atlas-region-name">Казахстан</h2><div class="selected-metrics"><div><strong id="atlas-r">29,8%</strong><span>R</span></div><div><strong id="atlas-mdr">12,4%</strong><span>MDR</span></div><div><strong id="atlas-isolates">186 742</strong><span>изолятов</span></div></div><div class="selected-signal"><span></span><p id="atlas-signal">Демонстрационный национальный профиль. Выберите область или город на карте.</p></div></article>
     </section>
 
     <section class="atlas-map-canvas">
@@ -66,22 +45,12 @@
       <div class="atlas-map-note">Административные контуры 2024 · значения прототипа демонстрационные</div>
     </section>
 
-    <aside class="atlas-insight-rail">
-      <div class="rail-label">В ФОКУСЕ</div>
-      <article><span class="risk red"></span><div><strong>K. pneumoniae</strong><small>карбапенемы</small></div><b>↑ 5,4 п.п.</b></article>
-      <article><span class="risk amber"></span><div><strong>ESBL Enterobacterales</strong><small>Абай</small></div><b>34,8%</b></article>
-      <article><span class="risk blue"></span><div><strong>S. aureus</strong><small>MRSA мониторинг</small></div><b>14,2%</b></article>
-      <a href="./mechanisms.html">Открыть механизмы AMR →</a>
-    </aside>
+    <aside class="atlas-insight-rail"><div class="rail-label">В ФОКУСЕ</div><article><span class="risk red"></span><div><strong>K. pneumoniae</strong><small>карбапенемы</small></div><b>↑ 5,4 п.п.</b></article><article><span class="risk amber"></span><div><strong>ESBL Enterobacterales</strong><small>Абай</small></div><b>34,8%</b></article><article><span class="risk blue"></span><div><strong>S. aureus</strong><small>MRSA мониторинг</small></div><b>14,2%</b></article><a href="./mechanisms.html">Открыть механизмы AMR →</a></aside>
   </main>
 
-  <section class="atlas-bottom-band">
-    <div class="band-title"><span>Национальный тренд</span><small>2020 → 2026</small></div>
-    <div class="band-trend"><svg viewBox="0 0 500 90" preserveAspectRatio="none"><polyline points="0,78 83,70 166,58 249,48 332,35 415,23 500,12"/></svg><div><b>20,4%</b><b>21,8%</b><b>23,2%</b><b>24,7%</b><b>26,1%</b><b>27,4%</b><b>29,8%</b></div></div>
-    <div class="band-pathogens"><span>Приоритет</span><b>E. coli</b><b>K. pneumoniae</b><b>A. baumannii</b><b>P. aeruginosa</b></div>
-  </section>
+  <section class="atlas-bottom-band"><div class="band-title"><span>Национальный тренд</span><small>2020 → 2026</small></div><div class="band-trend"><svg viewBox="0 0 500 90" preserveAspectRatio="none"><polyline points="0,78 83,70 166,58 249,48 332,35 415,23 500,12"/></svg><div><b>20,4%</b><b>21,8%</b><b>23,2%</b><b>24,7%</b><b>26,1%</b><b>27,4%</b><b>29,8%</b></div></div><div class="band-pathogens"><span>Приоритет</span><b>E. coli</b><b>K. pneumoniae</b><b>A. baumannii</b><b>P. aeruginosa</b></div></section>
 
-  <script src="./atlas-themes.js?v=20260916-4"></script>
+  <script src="./atlas-themes.js?v=20260916-5"></script>
   <script src="./regions-loader.js?v=20260916-1"></script>
   <script src="./national-atlas.js?v=20260916-3"></script>
 </body>
