@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:public": "node scripts/check-public.mjs",
+    "verify": "npm run typecheck && npm run check:public"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
