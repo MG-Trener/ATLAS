@@ -6,7 +6,7 @@ const root = process.cwd();
 const requiredPages = ['index.html','national-atlas.html','command-center.html','reference.html','mechanisms.html'];
 const requiredShared = [
   'atlas-themes.js','atlas-global-i18n.js','atlas-i18n-extensions.js','atlas-global-i18n.css',
-  'platform-status.js','platform-status.css','regions-loader.js','regions.json','atlas-readable-type.css',
+  'platform-status.js','platform-status.css','platform-manifest.json','regions-loader.js','regions.json','atlas-readable-type.css',
   'analysis-context.js','amr-demo-data.js','regional-analysis.js','unified-analytics.js'
 ];
 const failures = [];
@@ -42,6 +42,20 @@ for (const page of requiredPages) {
   }
 }
 
+let manifest=null;
+if (existsSync(file('platform-manifest.json'))) {
+  try {
+    manifest=JSON.parse(readFileSync(file('platform-manifest.json'),'utf8'));
+    if (manifest.stage!=='prototype') fail(`platform-manifest.json: expected stage=prototype, found ${manifest.stage}`);
+    if (manifest.official_statistics!==false) fail('platform-manifest.json: prototype must declare official_statistics=false');
+    if (manifest.surveillance?.mode!=='demo') fail('platform-manifest.json: surveillance.mode must remain demo until validated observations are connected');
+    const languages=new Set(manifest.languages||[]);
+    for (const lang of ['ru','kk','en']) if (!languages.has(lang)) fail(`platform-manifest.json: missing language ${lang}`);
+  } catch (error) {
+    fail(`platform-manifest.json: invalid JSON (${error.message})`);
+  }
+}
+
 if (existsSync(file('regions.json'))) {
   try {
     const regions=JSON.parse(readFileSync(file('regions.json'),'utf8'));
@@ -49,8 +63,9 @@ if (existsSync(file('regions.json'))) {
     else {
       const pcodes=regions.map(region=>region?.pcode).filter(Boolean);
       const unique=new Set(pcodes);
-      if (regions.length!==20) fail(`regions.json: expected 20 territories, found ${regions.length}`);
-      if (unique.size!==20) fail(`regions.json: expected 20 unique PCODE values, found ${unique.size}`);
+      const expected=manifest?.geography?.territories ?? 20;
+      if (regions.length!==expected) fail(`regions.json: expected ${expected} territories, found ${regions.length}`);
+      if (unique.size!==expected) fail(`regions.json: expected ${expected} unique PCODE values, found ${unique.size}`);
       for (const region of regions) {
         if (!region?.pcode || !region?.path) fail('regions.json: every territory must contain pcode and SVG path');
       }
@@ -92,4 +107,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`\nPublic prototype verification OK: ${requiredPages.length} pages, 20 territories, ${jsFiles.length} JS modules checked.`);
+console.log(`\nPublic prototype verification OK: ${requiredPages.length} pages, ${manifest?.geography?.territories ?? 20} territories, ${jsFiles.length} JS modules checked.`);
