@@ -1,0 +1,17 @@
+@media (min-width:1100px) and (min-height:680px){
+  html[data-atlas-concept="atlas"] .atlas-map-canvas{height:min(560px,calc(100vh - 150px));max-height:560px!important;align-self:center}
+  html[data-atlas-concept="atlas"] #national-kz-map{height:100%!important;min-height:0!important}
+
+  html[data-atlas-concept="command"] .command-event-strip{height:30px;min-height:30px;padding:0 9px}
+  html[data-atlas-concept="command"] .command-grid{height:calc(100vh - 78px)!important;grid-template-rows:54px minmax(300px,52vh) minmax(110px,1fr)!important}
+  html[data-atlas-concept="command"] .command-map-panel{min-height:0!important}
+  html[data-atlas-concept="command"] .command-map-stage{min-height:0!important;height:calc(100% - 64px)!important}
+  html[data-atlas-concept="command"] #command-kz-map{min-height:0!important;height:100%!important;padding:8px 18px!important}
+
+  html[data-atlas-concept="clinical"] .viewport-attention{box-shadow:0 0 0 2px rgba(217,95,103,.24),0 10px 28px rgba(32,73,112,.08)!important;transition:box-shadow .2s ease}
+}
+
+@media (min-width:1500px) and (min-height:800px){
+  html[data-atlas-concept="atlas"] .atlas-stage{grid-template-columns:300px minmax(620px,900px) 285px!important}
+  html[data-atlas-concept="command"] .command-grid{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr) minmax(0,.9fr) 265px!important}
+}
