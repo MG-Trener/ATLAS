@@ -87,6 +87,19 @@
     regionSelect.value=current;
   }
 
+  function openCatalog(tab){
+    const url=new URL('./reference.html',window.location.href);
+    url.searchParams.set('tab',tab);
+    window.location.href=url.toString();
+  }
+
+  document.querySelectorAll('.nav-item').forEach(button=>{
+    const section=button.dataset.section;
+    if(section==='Микроорганизмы')button.addEventListener('click',()=>openCatalog('organisms'));
+    if(section==='Антибиотики')button.addEventListener('click',()=>openCatalog('antimicrobials'));
+  });
+  document.querySelector('.resistance .panel-head button')?.addEventListener('click',()=>openCatalog('antimicrobials'));
+
   function selectRegion(region,pcode=''){
     activeRegion=region||'Казахстан';activePcode=pcode||activePcode;
     if(![...regionSelect.options].some(o=>o.value===activeRegion))regionSelect.add(new Option(displayRegion(activeRegion),activeRegion));
