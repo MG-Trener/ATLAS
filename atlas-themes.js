@@ -33,8 +33,12 @@
     const script=document.createElement('script');script.src='./viewport-layout.js?v=20260916-1';script.dataset.atlasViewport='1';document.body.appendChild(script);
   }
   function loadReadableType(){
-    if(document.querySelector('link[data-atlas-readable]'))return;
-    const style=document.createElement('link');style.rel='stylesheet';style.href='./atlas-readable-type.css?v=20260916-1';style.dataset.atlasReadable='1';document.head.appendChild(style);
+    if(!document.querySelector('link[data-atlas-readable]')){
+      const style=document.createElement('link');style.rel='stylesheet';style.href='./atlas-readable-type.css?v=20260916-2';style.dataset.atlasReadable='1';document.head.appendChild(style);
+    }
+    if(document.body?.classList.contains('reference-page')&&!document.querySelector('link[data-atlas-reference-readable]')){
+      const extra=document.createElement('link');extra.rel='stylesheet';extra.href='./atlas-readable-reference.css?v=20260916-1';extra.dataset.atlasReferenceReadable='1';document.head.appendChild(extra);
+    }
   }
   function boot(){mount();loadClinicalWorkbench();loadViewportAssets();loadReadableType()}
   selectConcept(current(),false);
