@@ -24,11 +24,12 @@
   function loadClinicalWorkbench(){
     if(pathConcept()!=='clinical'||document.querySelector('link[data-atlas-clinical]'))return;
     const style=document.createElement('link');style.rel='stylesheet';style.href='./clinical-workspace.css?v=20260916-2';style.dataset.atlasClinical='1';document.head.appendChild(style);
-    const script=document.createElement('script');script.src='./clinical-workspace.js?v=20260916-2';script.dataset.atlasClinical='1';document.body.appendChild(script);
+    const script=document.createElement('script');script.src='./clinical-workspace.js?v=20260916-3';script.dataset.atlasClinical='1';document.body.appendChild(script);
   }
   function loadViewportAssets(){
     if(!pathConcept()||document.querySelector('link[data-atlas-viewport]'))return;
     const style=document.createElement('link');style.rel='stylesheet';style.href='./viewport-layout.css?v=20260916-1';style.dataset.atlasViewport='1';document.head.appendChild(style);
+    const tuning=document.createElement('link');tuning.rel='stylesheet';tuning.href='./viewport-tuning.css?v=20260916-1';tuning.dataset.atlasViewport='tuning';document.head.appendChild(tuning);
     const script=document.createElement('script');script.src='./viewport-layout.js?v=20260916-1';script.dataset.atlasViewport='1';document.body.appendChild(script);
   }
   function boot(){mount();loadClinicalWorkbench();loadViewportAssets()}
