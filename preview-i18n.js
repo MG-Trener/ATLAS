@@ -139,7 +139,9 @@
   const allEntries = [...phrases, ...Object.values(pcodeNames), ...looseRegions];
   const knownEntries = new Set(allEntries.map((entry) => LANGS.map((lang) => entry[lang] || '').join('\u0000')));
   const reverse = new Map();
-  allEntries.forEach((entry) => LANGS.forEach((lang) => reverse.set(entry[lang], entry)));
+  allEntries.forEach((entry) => LANGS.forEach((lang) => {
+    if (!reverse.has(entry[lang])) reverse.set(entry[lang], entry);
+  }));
 
   function registerTranslations(entries = []) {
     let changed = false;
@@ -149,7 +151,9 @@
       if (knownEntries.has(key)) return;
       knownEntries.add(key);
       allEntries.push(entry);
-      LANGS.forEach((lang) => reverse.set(entry[lang], entry));
+      LANGS.forEach((lang) => {
+        if (!reverse.has(entry[lang])) reverse.set(entry[lang], entry);
+      });
       changed = true;
     });
     if (changed) scheduleApply();
