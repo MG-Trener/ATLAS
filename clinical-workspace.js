@@ -12,7 +12,7 @@
     <article class="clinical-queue">
       <div class="clinical-workbench-head">
         <div><h2>Рабочая очередь</h2><p>Что требует внимания специалиста сегодня · демонстрационные записи</p></div>
-        <span>5 задач</span>
+        <span>4 задачи</span>
       </div>
       <div class="clinical-queue-grid">
         <div class="clinical-task high" tabindex="0">
@@ -34,13 +34,15 @@
       <div class="clinical-actions-body">
         <button class="clinical-action" type="button" data-action="catalog"><span>◉</span><strong>Справочник</strong><small>Организмы и препараты</small></button>
         <button class="clinical-action" type="button" data-action="mechanisms"><span>⌬</span><strong>Механизмы AMR</strong><small>ESBL, CRE, MRSA, VRE…</small></button>
-        <button class="clinical-action" type="button" data-action="map"><span>⌖</span><strong>Карта</strong><small>Перейти к регионам</small></button>
-        <button class="clinical-action" type="button" data-action="signals"><span>△</span><strong>Сигналы</strong><small>Открыть AMR Radar</small></button>
+        <button class="clinical-action" type="button" data-action="map"><span>⌖</span><strong>Карта</strong><small>Региональный слой</small></button>
+        <button class="clinical-action" type="button" data-action="signals"><span>△</span><strong>Сигналы</strong><small>AMR Radar</small></button>
       </div>
       <div class="clinical-data-health"><div><span>Готовность данных прототипа</span><strong>91%</strong></div><div class="clinical-health-bar"><i></i></div></div>
     </aside>`;
 
-  stats.insertAdjacentElement('afterend', block);
+  const tabs = document.querySelector('.clinical-view-tabs');
+  if (tabs) tabs.insertAdjacentElement('afterend', block);
+  else stats.insertAdjacentElement('afterend', block);
 
   block.querySelectorAll('.clinical-task').forEach(task => {
     const activate = () => {
@@ -53,6 +55,12 @@
 
   block.querySelector('[data-action="catalog"]')?.addEventListener('click', () => { location.href = './reference.html'; });
   block.querySelector('[data-action="mechanisms"]')?.addEventListener('click', () => { location.href = './mechanisms.html'; });
-  block.querySelector('[data-action="map"]')?.addEventListener('click', () => { document.getElementById('map-section')?.scrollIntoView({behavior:'smooth', block:'center'}); });
-  block.querySelector('[data-action="signals"]')?.addEventListener('click', () => { document.querySelector('.alerts')?.scrollIntoView({behavior:'smooth', block:'center'}); });
+  block.querySelector('[data-action="map"]')?.addEventListener('click', () => {
+    if (window.AtlasViewport?.setClinicalView) window.AtlasViewport.setClinicalView('map');
+    else document.getElementById('map-section')?.scrollIntoView({behavior:'smooth',block:'center'});
+  });
+  block.querySelector('[data-action="signals"]')?.addEventListener('click', () => {
+    if (window.AtlasViewport?.setClinicalView) window.AtlasViewport.setClinicalView('overview');
+    else document.querySelector('.alerts')?.scrollIntoView({behavior:'smooth',block:'center'});
+  });
 })();
