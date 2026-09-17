@@ -23,6 +23,40 @@
     "mode": "demo",
     "provider": "amr-demo-data.js",
     "real_observations_connected": false,
+    "profiles": [
+      {
+        "code": "caesar_invasive",
+        "label": "CAESAR",
+        "purpose": "national_invasive_amr_surveillance",
+        "specimens": ["blood", "cerebrospinal_fluid"],
+        "priority_groups": 9,
+        "deduplication_rule": "first_isolate_per_patient_organism_year",
+        "status": "prototype"
+      },
+      {
+        "code": "glass_routine",
+        "label": "GLASS",
+        "purpose": "extended_routine_amr_surveillance",
+        "specimens": ["blood", "urine", "stool", "urogenital"],
+        "requires_demography": true,
+        "requires_infection_origin": true,
+        "status": "prototype"
+      },
+      {
+        "code": "hospital_antibiogram",
+        "label": "Hospital antibiogram",
+        "purpose": "local_facility_stewardship",
+        "status": "prototype"
+      }
+    ],
+    "publication_policy": {
+      "show_percentage_min_n": 10,
+      "low_precision_warning_below_n": 30,
+      "show_95ci": true,
+      "require_breakpoint_version": true,
+      "require_deduplication_version": true,
+      "require_quality_context": true
+    },
     "warning": "Prototype surveillance metrics are demonstration values and are not official statistics."
   }
 }
