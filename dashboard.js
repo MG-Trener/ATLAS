@@ -31,28 +31,33 @@
   const formatDelta=(v)=>Number(v).toLocaleString(locale(),{minimumFractionDigits:1,maximumFractionDigits:1});
   const pp=()=>i18n()?.language==='en'?'pp':i18n()?.language==='kk'?'т.п.':'п.п.';
   const barClass=(v)=>v>=40?'danger':v>=20?'warn':'safe';
+  const ci95=(percent,n)=>{const p=percent/100,z=1.96,den=1+z*z/n,centre=(p+z*z/(2*n))/den,margin=z*Math.sqrt((p*(1-p)+z*z/(4*n))/n)/den;return[formatPct(Math.max(0,(centre-margin)*100)),formatPct(Math.min(100,(centre+margin)*100))]};
 
   function updateStats(region){
     const shownRegion=displayRegion(region);
     const factor=regionFactor(region),rf=.83+(hash(region+'R')%34)/100;
     const isolates=region==='Казахстан'?baseline.isolates:baseline.isolates*factor/8.7;
+    const tested=region==='Казахстан'?14382:Math.max(30,14382*factor/8.7);
     const resistance=baseline.resistance*rf;
+    const resistant=Math.round(tested*resistance/100);
+    const interval=ci95(resistance,tested);
     const mdr=baseline.mdr*(.82+(hash(region+'M')%35)/100);
     const esbl=baseline.esbl*(.84+(hash(region+'E')%33)/100);
     const alerts=region==='Казахстан'?3:Math.max(0,hash(region+'A')%4);
     const lang=i18n()?.language||'ru';
     const regionDelta=lang==='en'?'from region':lang==='kk'?'өңірден':'из региона';
-    const demoEstimate=lang==='en'?'demo estimate':lang==='kk'?'демонстрациялық бағалау':'демонстрационная оценка';
-    const multipleResistance=translate('множественная резистентность');
-    const allEcoli=translate('от всех E. coli');
+    const testedLabel=lang==='en'?'tested':lang==='kk'?'тестіленген':'протестировано';
+    const mdrDefinition=lang==='en'?'definition pending expert approval':lang==='kk'?'анықтамасы сараптамалық бекітуге дейін':'определение до экспертного утверждения';
+    const inferredPhenotype=lang==='en'?'inferred phenotype':lang==='kk'?'болжамды фенотип':'предполагаемый фенотип';
+    const noMolecular=lang==='en'?'not molecular confirmation':lang==='kk'?'молекулалық растау емес':'не молекулярное подтверждение';
     const needsAttention=translate('требуют внимания');
     const noNew=lang==='en'?'no new':lang==='kk'?'жаңа жоқ':'нет новых';
     const noSignals=lang==='en'?'no active signals':lang==='kk'?'белсенді сигналдар жоқ':'активных сигналов нет';
     const values=[
-      {main:formatInt(isolates),delta:region==='Казахстан'?'↑ 12%':regionDelta,sub:`${shownRegion}, 2026`},
-      {main:formatPct(resistance),delta:`↑ ${formatDelta(resistance-24.5)} ${pp()}`,sub:demoEstimate},
-      {main:formatPct(mdr),delta:`↑ ${formatDelta(mdr-6.4)} ${pp()}`,sub:multipleResistance},
-      {main:formatPct(esbl),delta:`↑ ${formatDelta(esbl-15.3)} ${pp()}`,sub:allEcoli},
+      {main:formatInt(isolates),delta:region==='Казахстан'?'demo':regionDelta,sub:`${shownRegion}, 2026 YTD`},
+      {main:formatPct(resistance),delta:`${formatInt(resistant)}/${formatInt(tested)}`,sub:`95% CI ${interval[0]}–${interval[1]} · ${testedLabel}`},
+      {main:formatPct(mdr),delta:'demo v0.1',sub:mdrDefinition},
+      {main:formatPct(esbl),delta:inferredPhenotype,sub:noMolecular},
       {main:String(alerts),delta:alerts?`↑ ${alerts}`:noNew,sub:alerts?needsAttention:noSignals}
     ];
     statCards.forEach((card,i)=>{const strong=card.querySelector('strong'),small=card.querySelector('small');if(!strong||!values[i])return;const em=strong.querySelector('em');strong.firstChild.textContent=`${values[i].main} `;if(em)em.textContent=values[i].delta;if(small)small.textContent=values[i].sub;});
@@ -64,7 +69,7 @@
   }
 
   function updateCaptions(region){
-    const organism=organismSelect?.value||'Escherichia coli',material=materialSelect?.selectedOptions?.[0]?.textContent||materialSelect?.value||translate('Все материалы'),period=periodSelect?.value||'2026';
+    const organism=organismSelect?.value||'Escherichia coli',material=materialSelect?.selectedOptions?.[0]?.textContent||materialSelect?.value||translate('Все материалы'),period=periodSelect?.value||'2026 YTD';
     const shownRegion=displayRegion(region);
     if(pageTitle)pageTitle.textContent=organism;
     if(pageDescription){
