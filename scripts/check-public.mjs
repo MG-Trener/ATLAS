@@ -77,6 +77,22 @@ if (existsSync(file('platform-manifest.json'))) {
     if (manifest.surveillance?.mode!=='demo') fail('platform-manifest.json: surveillance.mode must remain demo until validated observations are connected');
     const languages=new Set(manifest.languages||[]);
     for (const lang of ['ru','kk','en']) if (!languages.has(lang)) fail(`platform-manifest.json: missing language ${lang}`);
+
+    const profileCodes=new Set((manifest.surveillance?.profiles||[]).map(profile=>profile?.code));
+    for (const code of ['caesar_invasive','glass_routine','hospital_antibiogram']) {
+      if (!profileCodes.has(code)) fail(`platform-manifest.json: missing surveillance profile ${code}`);
+    }
+    const caesar=(manifest.surveillance?.profiles||[]).find(profile=>profile?.code==='caesar_invasive');
+    if (caesar?.priority_groups!==9) fail(`platform-manifest.json: CAESAR profile must declare 9 priority groups, found ${caesar?.priority_groups}`);
+    const caesarSpecimens=new Set(caesar?.specimens||[]);
+    for (const specimen of ['blood','cerebrospinal_fluid']) if (!caesarSpecimens.has(specimen)) fail(`platform-manifest.json: CAESAR profile missing specimen ${specimen}`);
+
+    const policy=manifest.surveillance?.publication_policy||{};
+    if (!(Number(policy.show_percentage_min_n)>0)) fail('platform-manifest.json: publication_policy.show_percentage_min_n must be > 0');
+    if (!(Number(policy.low_precision_warning_below_n)>Number(policy.show_percentage_min_n))) fail('platform-manifest.json: low_precision_warning_below_n must be greater than show_percentage_min_n');
+    for (const key of ['show_95ci','require_breakpoint_version','require_deduplication_version','require_quality_context']) {
+      if (policy[key]!==true) fail(`platform-manifest.json: publication_policy.${key} must be true for the prototype contract`);
+    }
   } catch (error) {
     fail(`platform-manifest.json: invalid JSON (${error.message})`);
   }
