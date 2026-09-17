@@ -78,8 +78,9 @@
     const width=620,height=112,padX=12,padY=12;const values=profile.trend.map(x=>x.value);const max=Math.max(10,Math.ceil(Math.max(...values)/10)*10);const min=Math.max(0,Math.floor(Math.min(...values)/10)*10-10);const span=Math.max(10,max-min);
     const points=profile.trend.map((x,i)=>{const px=padX+i*((width-padX*2)/(profile.trend.length-1));const py=height-padY-((x.value-min)/span)*(height-padY*2);return{x:px,y:py,value:x.value,year:x.year}});
     const grid=[.25,.5,.75].map(q=>`<line class="grid" x1="0" x2="${width}" y1="${height*q}" y2="${height*q}"/>`).join('');
-    const dots=points.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4"><title>${p.year}: ${fmt(p.value)}%</title></circle>`).join('');
-    return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">${grid}<polyline points="${points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}"/>${dots}</svg><div class="regional-analysis-years">${profile.trend.map(x=>`<span>${x.year}</span>`).join('')}</div>`;
+    const yearLabel=year=>year===2026?'2026 YTD':year;
+    const dots=points.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4"><title>${yearLabel(p.year)}: ${fmt(p.value)}%</title></circle>`).join('');
+    return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">${grid}<polyline points="${points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}"/>${dots}</svg><div class="regional-analysis-years">${profile.trend.map(x=>`<span>${yearLabel(x.year)}</span>`).join('')}</div>`;
   }
 
   function render(){

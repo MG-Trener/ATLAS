@@ -60,7 +60,7 @@
     const afterContext=()=>{
       const afterData=()=>{
         const loadUnified=()=>{if(window.__atlasUnifiedAnalytics)return;loadScript('./unified-analytics.js?v=20260917-1','unified-analytics')};
-        if(window.__atlasRegionalAnalysis)loadUnified();else loadScript('./regional-analysis.js?v=20260917-1','regional-analysis',loadUnified);
+        if(window.__atlasRegionalAnalysis)loadUnified();else loadScript('./regional-analysis.js?v=20260917-2','regional-analysis',loadUnified);
       };
       if(window.AtlasDemoData)afterData();else loadScript('./amr-demo-data.js?v=20260917-1','demo-data',afterData);
     };
