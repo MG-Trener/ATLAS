@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import geometrySource from "../../regions.json";
 import { useAtlasLanguage } from "../i18n/AtlasLanguage";
 import { slugForRegion } from "../data/regions";
 import styles from "./KazakhstanRegionMap.module.css";
@@ -10,7 +11,7 @@ type MapRegion = { name_kk: string; name_en: string; pcode: string; path: string
 type RegionValue = { name: string; short: string; resistance: number };
 type Props = { regions: RegionValue[]; selectedRegion: string; onSelect: (name: string) => void };
 
-const SOURCE_URL = "https://raw.githubusercontent.com/galymorg/new_qazaqstan_GeoJSON/refs/heads/main/regions.json";
+const geometry = geometrySource as MapRegion[];
 const pcodeToRegion: Record<string, string> = {
   KZ10:"Абайская", KZ11:"Акмолинская", KZ15:"Актюбинская", KZ19:"Алматинская", KZ23:"Атырауская",
   KZ27:"Западно-Казахстанская", KZ31:"Жамбылская", KZ33:"Жетысуская", KZ35:"Карагандинская", KZ39:"Костанайская",
@@ -21,15 +22,8 @@ const pcodeToRegion: Record<string, string> = {
 function tone(value:number){ return value >= 32 ? styles.geoHot : value >= 25 ? styles.geoWarm : styles.geoCool; }
 
 export default function KazakhstanRegionMap({ regions, selectedRegion, onSelect }: Props) {
-  const [geometry,setGeometry]=useState<MapRegion[]>([]);
-  const [state,setState]=useState<"loading"|"ready"|"error">("loading");
   const { t, regionName } = useAtlasLanguage();
-
-  useEffect(()=>{ let active=true; fetch(SOURCE_URL).then(r=>{if(!r.ok) throw new Error("map"); return r.json() as Promise<MapRegion[]>;}).then(data=>{if(active){setGeometry(data);setState("ready");}}).catch(()=>{if(active)setState("error");}); return()=>{active=false;};},[]);
   const values=useMemo(()=>new Map(regions.map(item=>[item.name,item])),[regions]);
-
-  if(state==="loading") return <div className={styles.mapLoader}><span/><strong>{t("loadingMap")}</strong></div>;
-  if(state==="error") return <div className={styles.mapFallback}><strong>{t("mapUnavailable")}</strong><p>{t("mapUnavailableText")}</p><div>{regions.map(item=><button key={item.name} onClick={()=>onSelect(item.name)} className={selectedRegion===item.name?styles.fallbackSelected:""}><span>{item.short}</span><small>{regionName(item.name)}</small><b>{item.resistance}%</b></button>)}</div></div>;
 
   return <div className={styles.realMap}>
     <svg viewBox="0 0 610 345" role="img" aria-label={t("mapAria")}>
