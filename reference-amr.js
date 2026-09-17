@@ -10,6 +10,9 @@
     kk: {mechanisms:'Төзімділік механизмдері', mechanismsHint:'Анықтамалық AMR контексті · емдеу ұсынымы емес', genes:'Гендер / маркерлер', classes:'Әсер ететін кластар', related:'Байланысты препараттар мен маркерлер', relatedHint:'Карточкасын ашу үшін препаратты басыңыз', organisms:'AMR мониторингіндегі байланысты микроорганизмдер', core:'Негізгі', important:'Маңызды', watch:'Бақылау', marker:'Қадағалау маркері', context:'AMR контексті', phenotype:'Фенотиптік контекст', loading:'AMR контексті жүктелуде…', empty:'Бұл жазба үшін кеңейтілген AMR контексті әзірге қосылмаған.'},
     en: {mechanisms:'Resistance mechanisms', mechanismsHint:'Reference AMR context · not a treatment recommendation', genes:'Genes / markers', classes:'Affected classes', related:'Related agents and markers', relatedHint:'Select an agent to open its reference card', organisms:'Related organisms in AMR surveillance', core:'Core', important:'Important', watch:'Watch', marker:'Surveillance marker', context:'AMR context', phenotype:'Phenotype context', loading:'Loading AMR context…', empty:'Expanded AMR context has not yet been added for this record.'}
   };
+  Object.assign(labels.ru,{mechanismsHint:'Справочная связь · фенотип не подтверждает ген или механизм · не рекомендация по лечению',genes:'Гены / маркеры · примеры, не результаты теста'});
+  Object.assign(labels.kk,{mechanismsHint:'Анықтамалық байланыс · фенотип генді немесе механизмді растамайды · емдеу ұсынымы емес',genes:'Гендер / маркерлер · мысалдар, тест нәтижесі емес'});
+  Object.assign(labels.en,{mechanismsHint:'Reference association · phenotype does not confirm a gene or mechanism · not treatment advice',genes:'Genes / markers · examples, not test results'});
 
   const cache = new Map();
   let requestNo = 0;

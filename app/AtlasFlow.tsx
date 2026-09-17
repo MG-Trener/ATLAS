@@ -315,6 +315,17 @@ function Stat({ label, value, detail, icon: Icon, tone = "blue" }: { label: stri
   );
 }
 
+function proportionCi95(percent: number, total: number) {
+  const n = Math.max(1, total);
+  const x = Math.round(n * percent / 100);
+  const p = x / n;
+  const z = 1.959964;
+  const denominator = 1 + z * z / n;
+  const centre = (p + z * z / (2 * n)) / denominator;
+  const margin = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denominator;
+  return [Math.max(0, (centre - margin) * 100), Math.min(100, (centre + margin) * 100)];
+}
+
 export default function AtlasFlow() {
   const [view, setView] = useState<View>("organism");
   const [organismName, setOrganismName] = useState("Escherichia coli");
@@ -328,6 +339,8 @@ export default function AtlasFlow() {
   const organism = organismProfiles[organismName] ?? organismProfiles["Escherichia coli"];
   const antibiotic = organism.antibiotics.find((item) => item.name === antibioticName) ?? organism.antibiotics[3];
   const antibioticMeta = antibioticDetails[antibiotic.name] ?? { className: antibiotic.className, route: "По показаниям", who: "Watch", trend: [20, 21, 22, 24, 25, 27, antibiotic.resistance] };
+  const [ciLow, ciHigh] = proportionCi95(antibiotic.resistance, antibiotic.isolates);
+  const resistantCount = Math.round(antibiotic.isolates * antibiotic.resistance / 100);
 
   const errorCount = parsed?.issues.filter((item) => item.level === "error").length ?? 0;
   const warningCount = parsed?.issues.filter((item) => item.level === "warning").length ?? 0;
@@ -437,15 +450,15 @@ export default function AtlasFlow() {
                 <label><span>Микроорганизм</span><select value={organismName} onChange={(event) => setOrganismName(event.target.value)}>{Object.keys(organismProfiles).map((name) => <option key={name}>{name}</option>)}</select></label>
                 <label><span>Материал</span><select value={material} onChange={(event) => setMaterial(event.target.value)}><option>Все материалы</option><option>Кровь</option><option>Моча</option><option>Респираторный материал</option></select></label>
                 <label><span>Регион</span><select value={region} onChange={(event) => setRegion(event.target.value)}><option>Казахстан</option><option>Астана</option><option>Алматы</option><option>Караганда</option></select></label>
-                <label><span>Период</span><select defaultValue="2020–2026"><option>2020–2026</option><option>2026</option><option>Последние 12 месяцев</option></select></label>
+                <label><span>Период</span><select defaultValue="2020–2026"><option>2020–2026</option><option>2026 YTD</option><option>Последние 12 месяцев</option></select></label>
                 <button className={styles.filterButton}><SlidersHorizontal size={16} /> Доп. фильтры</button>
               </section>
 
               <section className={styles.statsGrid}>
                 <Stat icon={FlaskConical} label="Изолятов" value={formatNumber(organism.isolates)} detail={`${region} · ${material}`} />
-                <Stat icon={Activity} label="Средняя резистентность" value={`${organism.avgResistance.toFixed(1).replace(".", ",")}%`} detail="в выбранном профиле" tone="red" />
-                <Stat icon={Gauge} label="MDR" value={`${organism.mdr.toFixed(1).replace(".", ",")}%`} detail="множественная резистентность" tone="orange" />
-                <Stat icon={ShieldCheck} label={organism.phenotypeLabel} value={`${organism.phenotype.toFixed(1).replace(".", ",")}%`} detail="значимый фенотип" tone="green" />
+                <Stat icon={Activity} label={`%R · ${antibiotic.short}`} value={`${antibiotic.resistance.toFixed(1).replace(".", ",")}%`} detail={`${formatNumber(resistantCount)}/${formatNumber(antibiotic.isolates)} · 95% ДИ ${ciLow.toFixed(1)}–${ciHigh.toFixed(1)}`} tone="red" />
+                <Stat icon={Gauge} label="MDR · demo v0.1" value={`${organism.mdr.toFixed(1).replace(".", ",")}%`} detail="определение ожидает экспертного утверждения" tone="orange" />
+                <Stat icon={ShieldCheck} label={`${organism.phenotypeLabel} · предполагаемый`} value={`${organism.phenotype.toFixed(1).replace(".", ",")}%`} detail="не означает молекулярное подтверждение" tone="green" />
               </section>
 
               <section className={styles.organismGrid}>
@@ -462,9 +475,9 @@ export default function AtlasFlow() {
                 </article>
 
                 <article className={styles.panel}>
-                  <div className={styles.panelHead}><div><h2>Динамика резистентности</h2><p>2020–2026 · сводный индекс</p></div><TrendingUp size={19} /></div>
-                  <MiniLine values={[18, 20, 22, 24, 25, 27, organism.avgResistance]} />
-                  <div className={styles.yearLabels}><span>2020</span><span>2021</span><span>2022</span><span>2023</span><span>2024</span><span>2025</span><span>2026</span></div>
+                  <div className={styles.panelHead}><div><h2>Динамика резистентности</h2><p>{organism.name} × {antibiotic.name} · %R</p></div><TrendingUp size={19} /></div>
+                  <MiniLine values={antibioticMeta.trend} />
+                  <div className={styles.yearLabels}><span>2020</span><span>2021</span><span>2022</span><span>2023</span><span>2024</span><span>2025</span><span>2026 YTD</span></div>
                   <div className={styles.insight}><AlertTriangle size={17} /><div><strong>Тренд требует наблюдения</strong><span>Рост наиболее заметен для β-лактамов и фторхинолонов.</span></div></div>
                 </article>
 
@@ -492,10 +505,10 @@ export default function AtlasFlow() {
 
               <section className={styles.antibioticDetailGrid}>
                 <article className={styles.panel}>
-                  <div className={styles.panelHead}><div><h2>Динамика {antibiotic.name}</h2><p>Доля резистентных изолятов, %</p></div><span className={styles.countBadge}>2020–2026</span></div>
+                  <div className={styles.panelHead}><div><h2>Динамика {antibiotic.name}</h2><p>Доля резистентных изолятов, %</p></div><span className={styles.countBadge}>2020–2026 YTD</span></div>
                   <MiniLine values={antibioticMeta.trend} />
-                  <div className={styles.yearLabels}><span>2020</span><span>2021</span><span>2022</span><span>2023</span><span>2024</span><span>2025</span><span>2026</span></div>
-                  <div className={styles.detailNote}><Info size={16} /><span>Интерпретация в прототипе показана как аналитическая витрина. При подключении данных добавим версию breakpoint-стандарта CLSI/EUCAST к каждой записи.</span></div>
+                  <div className={styles.yearLabels}><span>2020</span><span>2021</span><span>2022</span><span>2023</span><span>2024</span><span>2025</span><span>2026 YTD</span></div>
+                  <div className={styles.detailNote}><Info size={16} /><span>Паспорт demo-показателя: R / интерпретируемые протестированные изоляты · EUCAST 2026 demo mapping · 95% ДИ Wilson · первый изолят пациента × организм × отчётный период.</span></div>
                 </article>
 
                 <article className={styles.panel}>
@@ -509,7 +522,7 @@ export default function AtlasFlow() {
                 </article>
 
                 <article className={`${styles.panel} ${styles.regionPanel}`}>
-                  <div className={styles.panelHead}><div><h2>Региональная вариабельность</h2><p>{antibiotic.name} · 2026</p></div><MapPin size={19} /></div>
+                  <div className={styles.panelHead}><div><h2>Региональная вариабельность</h2><p>{antibiotic.name} · 2026 YTD · без ранжирования</p></div><MapPin size={19} /></div>
                   <div className={styles.regionTable}><div><span>Регион</span><span>R</span><span>N</span><span>Δ</span></div>{regionRows.map(([name, rate, n, delta]) => <button key={name} onClick={() => { setRegion(name); setView("radar"); }}><span>{name}</span><b>{rate}%</b><span>{formatNumber(n)}</span><em className={delta > 0 ? styles.badDelta : styles.goodDelta}>{delta > 0 ? "+" : ""}{delta}</em></button>)}</div>
                 </article>
               </section>
@@ -527,7 +540,7 @@ export default function AtlasFlow() {
                 <label><span>Микроорганизм</span><select value={organismName} onChange={(event) => setOrganismName(event.target.value)}>{Object.keys(organismProfiles).map((name) => <option key={name}>{name}</option>)}</select></label>
                 <label><span>Антибиотик</span><select value={antibioticName} onChange={(event) => setAntibioticName(event.target.value)}>{baseAntibiotics.map((item) => <option key={item.name}>{item.name}</option>)}</select></label>
                 <label><span>Регион сравнения</span><select value={region} onChange={(event) => setRegion(event.target.value)}><option>Казахстан</option><option>Астана</option><option>Алматы</option><option>Караганда</option><option>Восточно-Казахстанская</option></select></label>
-                <label><span>Период</span><select defaultValue="2024–2026"><option>2024–2026</option><option>2026</option><option>2020–2026</option></select></label>
+                <label><span>Период</span><select defaultValue="2024–2026"><option>2024–2026</option><option>2026 YTD</option><option>2020–2026</option></select></label>
                 <button className={styles.filterButton}><SlidersHorizontal size={16} /> Сценарий</button>
               </section>
 

@@ -269,7 +269,7 @@
   function updateCaption() {
     if (!caption) return;
     const demo = i18n()?.language === 'en' ? 'demo values' : i18n()?.language === 'kk' ? 'демонстрациялық мәндер' : 'демонстрационные значения';
-    caption.textContent = `${activeAntibioticLabel()} · ${translate('Казахстан')} · 2026 · ${demo}`;
+    caption.textContent = `${activeAntibioticLabel()} · ${translate('Казахстан')} · 2026 YTD · ${demo}`;
   }
 
   loadRegions()

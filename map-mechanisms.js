@@ -90,7 +90,7 @@
     const labels=[...target.querySelectorAll('.atlas-region-label')];
     paths.forEach((path,index)=>{const value=valueFor(path.dataset.pcode||`R${index}`);path.setAttribute('fill',colorFor(value));path.dataset.mechanismValue=String(value);path.setAttribute('aria-label',`${path.getAttribute('aria-label')?.split(':')[0]||''}: ${mechName(mechanismCode)} ${decimal(value)}%`);if(labels[index])labels[index].textContent=`${Math.round(value)}%`;});
     const demo=t('демонстрационные значения','демонстрациялық мәндер','demo values');
-    if(caption)caption.textContent=`${mechName(mechanismCode)} · ${t('Казахстан','Қазақстан','Kazakhstan')} · 2026 · ${demo}`;
+    if(caption)caption.textContent=`${mechName(mechanismCode)} · ${t('Казахстан','Қазақстан','Kazakhstan')} · 2026 YTD · ${demo}`;
     const source=panel.querySelector('.amr-map-source');if(source)source.textContent=t('Демонстрационный слой механизма · реальные региональные данные будут подключены позже','Механизмнің демонстрациялық қабаты · нақты өңірлік деректер кейін қосылады','Demo mechanism layer · real regional data will be connected later');
     updateLegend();
   }
