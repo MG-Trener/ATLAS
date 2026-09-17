@@ -7,7 +7,8 @@ const requiredPages = ['index.html','national-atlas.html','command-center.html',
 const requiredShared = [
   'atlas-themes.js','atlas-global-i18n.js','atlas-i18n-extensions.js','atlas-global-i18n.css',
   'platform-status.js','platform-status.css','platform-manifest.json','regions-loader.js','regions.json','atlas-readable-type.css',
-  'analysis-context.js','amr-demo-data.js','regional-analysis.js','unified-analytics.js','whonet-quality.css'
+  'analysis-context.js','amr-demo-data.js','regional-analysis.js','unified-analytics.js','whonet-quality.css',
+  'surveillance-p0.js','surveillance-p0.css'
 ];
 const failures = [];
 const warnings = [];
@@ -60,6 +61,11 @@ if (existsSync(file('index.html'))) {
   for (const asset of ['preview-i18n.js','map.js']) {
     if (!new RegExp(`${asset.replace('.', '\\.')}\\?v=`).test(indexHtml)) fail(`index.html: ${asset} must be cache-busted`);
   }
+}
+
+if (existsSync(file('dashboard.js'))) {
+  const dashboard=readFileSync(file('dashboard.js'),'utf8');
+  if (!/surveillance-p0\.js\?v=/.test(dashboard)) fail('dashboard.js: surveillance-p0.js must be loaded with cache busting');
 }
 
 let manifest=null;
