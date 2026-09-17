@@ -43,6 +43,19 @@
     return data.profile({ pcode: pcode || 'KZ', organism: spec[0], drug: spec[1], material: spec[2], period: '2026' });
   }
 
+  function layerStats(pcode, layer) {
+    const profile = profileForLayer(pcode, layer);
+    const value = data.layerValue(pcode, layer);
+    const resistantCount = Math.round(profile.tested * value / 100);
+    return { profile, value, resistantCount, ci95: data.proportionCi95(resistantCount, profile.tested) };
+  }
+
+  function layerContext(layer) {
+    const spec = layerSpecs[layer] || layerSpecs.resistance;
+    if (layer === 'resistance') return `${data.organisms[spec[0]].short} × ${spec[1]}`;
+    return `${layer.toUpperCase()} · ${text('предполагаемый фенотип','болжамды фенотип','inferred phenotype')}`;
+  }
+
   function currentNationalLayer() { return document.querySelector('.atlas-mode-switch [data-layer].active')?.dataset.layer || 'resistance'; }
   function currentCommandLayer() { return document.querySelector('.command-layer-switch [data-layer].active')?.dataset.layer || 'esbl'; }
   function selectedPcode(selector) { return document.querySelector(`${selector}.selected`)?.dataset.pcode || readContext().pcode || 'KZ'; }
@@ -54,37 +67,39 @@
     const paths = [...document.querySelectorAll('.atlas-region[data-pcode]')];
     const labels = [...document.querySelectorAll('.atlas-region-label')];
     paths.forEach((path, index) => {
-      const v = data.layerValue(path.dataset.pcode, layer);
-      path.setAttribute('fill', color(v));
-      path.setAttribute('aria-label', `${regionName(path.dataset.pcode)} ${pct(v)}`);
-      if (labels[index]) labels[index].textContent = `${Math.round(v)}%`;
+      const { value:v, profile:p, ci95 } = layerStats(path.dataset.pcode, layer);
+      path.setAttribute('fill', p.publishable ? color(v) : '#aeb9c2');
+      path.setAttribute('aria-label', p.publishable ? `${regionName(path.dataset.pcode)} ${pct(v)}, 95% CI ${pct(ci95.low)}–${pct(ci95.high)}, N ${num(p.tested)}` : `${regionName(path.dataset.pcode)}, N ${num(p.tested)}, insufficient data`);
+      if (labels[index]) labels[index].textContent = p.publishable ? `${Math.round(v)}%` : 'N<30';
     });
 
     const pcode = selectedPcode('.atlas-region');
-    const profile = profileForLayer(pcode, layer);
-    const layerValue = data.layerValue(pcode, layer);
-    const nationalProfile = profileForLayer('KZ', layer);
-    const nationalValue = data.layerValue('KZ', layer);
+    const selectedStats = layerStats(pcode, layer);
+    const nationalStats = layerStats('KZ', layer);
+    const profile = selectedStats.profile;
+    const layerValue = selectedStats.value;
+    const nationalProfile = nationalStats.profile;
+    const nationalValue = nationalStats.value;
 
     const stats = document.querySelectorAll('.atlas-national-stats > div');
     if (stats[0]) {
       stats[0].querySelector('strong').textContent = pct(nationalValue);
-      stats[0].querySelector('span').textContent = layer === 'resistance' ? text('средняя R','орташа R','mean R') : layer.toUpperCase();
+      stats[0].querySelector('span').textContent = layerContext(layer);
     }
     if (stats[1]) stats[1].querySelector('strong').textContent = pct(nationalProfile.mdr);
     if (stats[2]) stats[2].querySelector('strong').textContent = '20/20';
 
-    const rEl = document.getElementById('atlas-r'); if (rEl) rEl.textContent = pct(layerValue);
+    const rEl = document.getElementById('atlas-r'); if (rEl) rEl.textContent = profile.publishable ? pct(layerValue) : '—';
     const mdrEl = document.getElementById('atlas-mdr'); if (mdrEl) mdrEl.textContent = pct(profile.mdr);
-    const nEl = document.getElementById('atlas-isolates'); if (nEl) nEl.textContent = num(profile.isolates);
+    const nEl = document.getElementById('atlas-isolates'); if (nEl) nEl.textContent = num(profile.tested);
     const nameEl = document.getElementById('atlas-region-name'); if (nameEl) nameEl.textContent = regionName(pcode);
     const codeEl = document.getElementById('atlas-region-code'); if (codeEl) codeEl.textContent = pcode === 'KZ' ? 'KZ' : pcode;
     const signal = document.getElementById('atlas-signal');
-    if (signal) signal.textContent = `${layer.toUpperCase()}: ${pcode === 'KZ' ? text('национальный профиль','ұлттық профиль','national profile') : text('региональный профиль','өңірлік профиль','regional profile')} · ${text('демонстрационные данные','демонстрациялық деректер','demo data')}.`;
+    if (signal) signal.textContent = profile.publishable ? `${layerContext(layer)} · ${pcode === 'KZ' ? text('национальный профиль','ұлттық профиль','national profile') : text('региональный профиль','өңірлік профиль','regional profile')} · 95% CI ${pct(selectedStats.ci95.low)}–${pct(selectedStats.ci95.high)} · N ${num(profile.tested)} · ${text('демонстрационные данные','демонстрациялық деректер','demo data')}.` : `${text('N < 30: процент скрыт','N < 30: пайыз жасырылды','N < 30: percentage suppressed')} · N ${num(profile.tested)}.`;
 
     const pcodes = Object.keys(data.regionNames);
     const ranked = pcodes.map(code => ({ pcode: code, value: data.layerValue(code, layer) })).sort((a,b) => b.value - a.value);
-    const ranking = document.querySelector('.atlas-ranking-list');
+    const ranking = document.querySelector('.atlas-ranking:not(.atlas-method-note) .atlas-ranking-list');
     if (ranking) {
       ranking.innerHTML = ranked.slice(0,5).map((item,i) => `<div class="atlas-rank-row" data-pcode="${item.pcode}"><span>${i+1}</span><strong>${regionName(item.pcode)}</strong><b>${pct(item.value)}</b></div>`).join('');
       ranking.querySelectorAll('[data-pcode]').forEach(row => row.addEventListener('click', () => document.querySelector(`.atlas-region[data-pcode="${row.dataset.pcode}"]`)?.dispatchEvent(new MouseEvent('click', { bubbles:true }))));
@@ -94,10 +109,9 @@
     if (compare) {
       const vals = ranked.map(x => x.value).sort((a,b) => a-b);
       const median = vals[Math.floor(vals.length/2)] || nationalValue;
-      const rank = pcode === 'KZ' ? null : ranked.findIndex(x => x.pcode === pcode) + 1;
       const delta = layerValue - nationalValue;
       const max = Math.max(45, layerValue, nationalValue, median) * 1.08;
-      compare.innerHTML = `<div class="atlas-compare-title"><strong>${text('Сравнение с национальным уровнем','Ұлттық деңгеймен салыстыру','Compare with national level')}</strong><span>${layer.toUpperCase()}</span></div><div class="atlas-compare-bars"><div class="atlas-compare-row"><span>${regionName(pcode)}</span><i><b style="width:${Math.min(100,layerValue/max*100)}%"></b></i><strong>${pct(layerValue)}</strong></div><div class="atlas-compare-row"><span>${text('Казахстан','Қазақстан','Kazakhstan')}</span><i><b style="width:${Math.min(100,nationalValue/max*100)}%"></b></i><strong>${pct(nationalValue)}</strong></div><div class="atlas-compare-row"><span>${text('Медиана регионов','Өңірлер медианасы','Regional median')}</span><i><b style="width:${Math.min(100,median/max*100)}%"></b></i><strong>${pct(median)}</strong></div></div><div class="atlas-compare-summary"><div><b>${rank ? `${rank} / 20` : '—'}</b><span>${text('место по слою','қабат бойынша орын','rank for layer')}</span></div><div><b>${pcode === 'KZ' ? '—' : `${delta >= 0 ? '+' : ''}${delta.toFixed(1)} ${pp()}`}</b><span>${text('к уровню страны','ел деңгейіне','vs country')}</span></div><div><b>${profile.sampleQuality === 'good' ? '✓' : profile.sampleQuality === 'moderate' ? '!' : '⚠'}</b><span>${text('оценка выборки','іріктеме бағасы','sample quality')}</span></div></div>`;
+      compare.innerHTML = `<div class="atlas-compare-title"><strong>${text('Сравнение с национальным уровнем','Ұлттық деңгеймен салыстыру','Compare with national level')}</strong><span>${layerContext(layer)}</span></div><div class="atlas-compare-bars"><div class="atlas-compare-row"><span>${regionName(pcode)}</span><i><b style="width:${Math.min(100,layerValue/max*100)}%"></b></i><strong>${pct(layerValue)}</strong></div><div class="atlas-compare-row"><span>${text('Казахстан','Қазақстан','Kazakhstan')}</span><i><b style="width:${Math.min(100,nationalValue/max*100)}%"></b></i><strong>${pct(nationalValue)}</strong></div><div class="atlas-compare-row"><span>${text('Медиана регионов','Өңірлер медианасы','Regional median')}</span><i><b style="width:${Math.min(100,median/max*100)}%"></b></i><strong>${pct(median)}</strong></div></div><div class="atlas-compare-summary"><div><b>${pct(selectedStats.ci95.low)}–${pct(selectedStats.ci95.high)}</b><span>95% CI</span></div><div><b>${num(profile.tested)}</b><span>N tested</span></div><div><b>${pcode === 'KZ' ? '—' : `${delta >= 0 ? '+' : ''}${delta.toFixed(1)} ${pp()}`}</b><span>${text('к уровню страны · без ранжирования','ел деңгейіне · рейтингсіз','vs country · no ranking')}</span></div></div>`;
     }
 
     const trendSvg = document.querySelector('.band-trend svg');
@@ -124,9 +138,9 @@
     const path = target.closest?.('.atlas-region[data-pcode]');
     if (!path) return;
     const layer = currentNationalLayer();
-    const v = data.layerValue(path.dataset.pcode, layer);
+    const { value:v, profile:p, ci95 } = layerStats(path.dataset.pcode, layer);
     const tip = document.getElementById('national-map-tooltip');
-    if (tip) tip.innerHTML = `<strong>${regionName(path.dataset.pcode)}</strong>${layer.toUpperCase()} · ${pct(v)}`;
+    if (tip) tip.innerHTML = p.publishable ? `<strong>${regionName(path.dataset.pcode)}</strong>${layerContext(layer)} · ${pct(v)}<br>95% CI ${pct(ci95.low)}–${pct(ci95.high)} · N ${num(p.tested)}` : `<strong>${regionName(path.dataset.pcode)}</strong>${text('Недостаточно данных для публикации процента','Пайызды жариялау үшін дерек жеткіліксіз','Insufficient data to publish a percentage')}<br>N ${num(p.tested)} · threshold 30`;
   }
 
   function syncCommand() {
@@ -144,14 +158,14 @@
     const pcode = selectedPcode('.command-region');
     const profile = profileForLayer(pcode, layer);
     const layerValue = data.layerValue(pcode, layer);
-    const r = document.getElementById('cc-r'); if (r) r.textContent = pct(profile.resistance);
+    const r = document.getElementById('cc-r'); if (r) { r.textContent = profile.publishable?pct(profile.resistance):'—'; r.title=`${profile.resistantCount}/${profile.tested} · 95% CI ${pct(profile.ci95.low)}–${pct(profile.ci95.high)}`; }
     const m = document.getElementById('cc-mdr'); if (m) m.textContent = pct(profile.mdr);
     const lv = document.getElementById('cc-layer-value'); if (lv) lv.textContent = pct(layerValue);
-    const iso = document.getElementById('cc-isolates'); if (iso) iso.textContent = num(profile.isolates);
+    const iso = document.getElementById('cc-isolates'); if (iso) iso.textContent = num(profile.tested);
     const labs = document.getElementById('cc-labs'); if (labs) labs.textContent = String(Math.max(2,Math.round(profile.isolates/520)));
     const title = document.getElementById('cc-region'); if (title) title.textContent = regionName(pcode);
     const selected = document.getElementById('cc-selected-name'); if (selected) selected.textContent = regionName(pcode).toUpperCase();
-    const note = document.getElementById('cc-region-note'); if (note) note.textContent = `${layer.toUpperCase()} · ${text('единый демонстрационный профиль','бірыңғай демонстрациялық профиль','shared demo profile')} · ${pcode}`;
+    const note = document.getElementById('cc-region-note'); if (note) note.textContent = `${layerContext(layer)} · ${text('фенотипический сигнал, не молекулярное подтверждение','фенотиптік сигнал, молекулалық растау емес','phenotypic signal, not molecular confirmation')} · N ${num(profile.tested)} · ${pcode}`;
     const kpiIso = document.querySelector('.command-kpis article:nth-child(4) strong'); if (kpiIso) kpiIso.textContent = profile.isolates >= 1000 ? `${(profile.isolates/1000).toFixed(1)}K` : String(profile.isolates);
 
     const pcodes = Object.keys(data.regionNames);
@@ -259,9 +273,9 @@
     const labels = [...document.querySelectorAll('.atlas-svg-map .atlas-region-label')];
     paths.forEach((path,i) => {
       const p = data.profile({...state,pcode:path.dataset.pcode});
-      path.setAttribute('fill',color(p.resistance));
-      path.setAttribute('aria-label',`${regionName(path.dataset.pcode)}: R ${pct(p.resistance)}`);
-      if(labels[i]) labels[i].textContent = `${Math.round(p.resistance)}%`;
+      path.setAttribute('fill',p.publishable?color(p.resistance):'#aeb9c2');
+      path.setAttribute('aria-label',p.publishable?`${regionName(path.dataset.pcode)}: R ${pct(p.resistance)}, 95% CI ${pct(p.ci95.low)}–${pct(p.ci95.high)}, N ${num(p.tested)}`:`${regionName(path.dataset.pcode)}: N ${num(p.tested)}, insufficient data`);
+      if(labels[i]) labels[i].textContent = p.publishable?`${Math.round(p.resistance)}%`:'N<30';
     });
     const caption = document.getElementById('map-caption');
     if(caption) caption.textContent = `${data.drugName(state.drug,lang())} · ${regionName(state.pcode)} · ${text('демонстрационные значения','демонстрациялық мәндер','demo values')}`;
@@ -275,17 +289,16 @@
     const organismSelect = document.querySelector('.filters label select');
     if (organismSelect && organismSelect.value !== org.name && [...organismSelect.options].some(o=>o.value===org.name)) organismSelect.value = org.name;
     const profiles = data.drugOptions(state.organism).map(d=>({code:d.code,p:data.profile({...state,drug:d.code})}));
-    const mean = profiles.reduce((sum,x)=>sum+x.p.resistance,0)/Math.max(1,profiles.length);
     const main = data.profile({...state,drug:org.defaultDrug});
     const phenotype = org.phenotypes[0] || 'AST';
     const phLayer = phenotypeLayer[phenotype];
     const phenotypeValue = phLayer ? data.layerValue(state.pcode,phLayer) : main.resistance;
     const stats = [...document.querySelectorAll('.stats .stat')];
     const values = [
-      [num(main.isolates),text('текущий срез','ағымдағы кесінді','current slice'),`${regionName(state.pcode)}, 2026`],
-      [pct(mean),`${mean-main.national>=0?'+':''}${(mean-main.national).toFixed(1)} ${pp()}`,text('среднее по панели препаратов','препараттар панелі бойынша орташа','mean across agent panel')],
-      [pct(main.mdr),'MDR',text('множественная резистентность','көптік төзімділік','multidrug resistance')],
-      [pct(phenotypeValue),phenotype,text('фенотипический индикатор','фенотиптік индикатор','phenotype indicator')],
+      [num(main.isolates),text('текущий срез','ағымдағы кесінді','current slice'),`${regionName(state.pcode)}, ${main.provenance.periodLabel}`],
+      [pct(main.resistance),`${num(main.resistantCount)}/${num(main.tested)}`,`95% CI ${pct(main.ci95.low)}–${pct(main.ci95.high)}`],
+      [pct(main.mdr),'demo v0.1',text('MDR · определение до экспертного утверждения','MDR · анықтамасы сараптамалық бекітуге дейін','MDR · definition pending expert approval')],
+      [pct(phenotypeValue),phenotype,text('предполагаемый фенотип · не молекулярное подтверждение','болжамды фенотип · молекулалық растау емес','inferred phenotype · not molecular confirmation')],
       ['', '', '']
     ];
     const pcodes = Object.keys(data.regionNames);
@@ -298,6 +311,7 @@
       if(strong){strong.firstChild.textContent=`${v[0]} `;if(em)em.textContent=v[1];}
       if(small)small.textContent=v[2];
     });
+    if(stats[1]){const label=stats[1].querySelector('div:last-child > span');if(label)label.textContent=`%R · ${org.short} × ${org.defaultDrug}`;}
     if(stats[3]){const label=stats[3].querySelector('div:last-child > span');if(label)label.textContent=phenotype;}
 
     const rows = [...document.querySelectorAll('.resistance .ab-row')];
@@ -350,7 +364,7 @@
     const path=target.closest?.('.atlas-svg-map .atlas-region[data-pcode]');if(!path)return;
     const state=clinicalState();const p=data.profile({...state,pcode:path.dataset.pcode});
     const tip=document.querySelector('.svg-map-tooltip');
-    if(tip)tip.innerHTML=`<strong>${regionName(path.dataset.pcode)}</strong><span>${data.drugName(state.drug,lang())} · R <b>${pct(p.resistance)}</b></span><span>${text('Изолятов','Изоляттар','Isolates')} <b>${num(p.isolates)}</b></span>`;
+    if(tip)tip.innerHTML=p.publishable?`<strong>${regionName(path.dataset.pcode)}</strong><span>${data.drugName(state.drug,lang())} · R <b>${pct(p.resistance)}</b></span><span>95% CI <b>${pct(p.ci95.low)}–${pct(p.ci95.high)}</b></span><span>N tested <b>${num(p.tested)}</b></span>`:`<strong>${regionName(path.dataset.pcode)}</strong><span>${text('Процент скрыт: N < 30','Пайыз жасырылды: N < 30','Percentage suppressed: N < 30')}</span><span>N tested <b>${num(p.tested)}</b></span>`;
   }
 
   function clinicalPopup(target) {

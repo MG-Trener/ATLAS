@@ -17,14 +17,14 @@
   const breadcrumb = () => document.querySelector('.breadcrumb');
 
   const organismDetails = {
-    'Escherichia coli': { group:'Enterobacterales', gram:'Грамотрицательная', isolates:84215, r:28.6, mdr:8.7, phenotype:'ESBL', phenotypeRate:18.4, topMaterial:'Моча', materialRate:61, trend:4.1 },
-    'Klebsiella pneumoniae': { group:'Enterobacterales', gram:'Грамотрицательная', isolates:47820, r:34.8, mdr:14.2, phenotype:'CRE', phenotypeRate:7.8, topMaterial:'Дыхательный материал', materialRate:38, trend:6.2 },
-    'Staphylococcus aureus': { group:'Staphylococcaceae', gram:'Грамположительная', isolates:31540, r:19.7, mdr:9.1, phenotype:'MRSA', phenotypeRate:14.2, topMaterial:'Раны', materialRate:44, trend:1.6 },
-    'Pseudomonas aeruginosa': { group:'Pseudomonadaceae', gram:'Грамотрицательная', isolates:22115, r:31.4, mdr:11.5, phenotype:'MDR', phenotypeRate:11.5, topMaterial:'Дыхательный материал', materialRate:46, trend:3.8 },
-    'Acinetobacter baumannii': { group:'Moraxellaceae', gram:'Грамотрицательная', isolates:16780, r:49.3, mdr:36.4, phenotype:'CRAB', phenotypeRate:32.1, topMaterial:'ОРИТ', materialRate:58, trend:8.9 },
-    'Enterococcus faecium': { group:'Enterococcaceae', gram:'Грамположительная', isolates:12460, r:27.9, mdr:12.6, phenotype:'VRE', phenotypeRate:9.6, topMaterial:'Моча', materialRate:42, trend:2.7 },
-    'Streptococcus pneumoniae': { group:'Streptococcaceae', gram:'Грамположительная', isolates:10330, r:16.8, mdr:4.7, phenotype:'PNSP', phenotypeRate:7.1, topMaterial:'Дыхательный материал', materialRate:71, trend:-0.8 },
-    'Salmonella spp.': { group:'Enterobacterales', gram:'Грамотрицательная', isolates:6940, r:13.6, mdr:4.3, phenotype:'MDR', phenotypeRate:4.3, topMaterial:'Кишечный материал', materialRate:87, trend:1.2 },
+    'Escherichia coli': { group:'Enterobacterales', gram:'Грамотрицательная', isolates:84215, marker:'Цефтриаксон', markerN:14382, r:28.6, mdr:8.7, phenotype:'ESBL', phenotypeRate:18.4, topMaterial:'Моча', materialRate:61, trend:4.1 },
+    'Klebsiella pneumoniae': { group:'Enterobacterales', gram:'Грамотрицательная', isolates:47820, marker:'Цефтриаксон', markerN:9374, r:34.8, mdr:14.2, phenotype:'CRE', phenotypeRate:7.8, topMaterial:'Дыхательный материал', materialRate:38, trend:6.2 },
+    'Staphylococcus aureus': { group:'Staphylococcaceae', gram:'Грамположительная', isolates:31540, marker:'Цефокситин', markerN:7420, r:19.7, mdr:9.1, phenotype:'MRSA', phenotypeRate:14.2, topMaterial:'Раны', materialRate:44, trend:1.6 },
+    'Pseudomonas aeruginosa': { group:'Pseudomonadaceae', gram:'Грамотрицательная', isolates:22115, marker:'Меропенем', markerN:5184, r:31.4, mdr:11.5, phenotype:'MDR', phenotypeRate:11.5, topMaterial:'Дыхательный материал', materialRate:46, trend:3.8 },
+    'Acinetobacter baumannii': { group:'Moraxellaceae', gram:'Грамотрицательная', isolates:16780, marker:'Меропенем', markerN:3912, r:49.3, mdr:36.4, phenotype:'CRAB', phenotypeRate:32.1, topMaterial:'ОРИТ', materialRate:58, trend:8.9 },
+    'Enterococcus faecium': { group:'Enterococcaceae', gram:'Грамположительная', isolates:12460, marker:'Ванкомицин', markerN:2870, r:27.9, mdr:12.6, phenotype:'VRE', phenotypeRate:9.6, topMaterial:'Моча', materialRate:42, trend:2.7 },
+    'Streptococcus pneumoniae': { group:'Streptococcaceae', gram:'Грамположительная', isolates:10330, marker:'Пенициллин', markerN:2248, r:16.8, mdr:4.7, phenotype:'PNSP', phenotypeRate:7.1, topMaterial:'Дыхательный материал', materialRate:71, trend:-0.8 },
+    'Salmonella spp.': { group:'Enterobacterales', gram:'Грамотрицательная', isolates:6940, marker:'Ципрофлоксацин', markerN:1614, r:13.6, mdr:4.3, phenotype:'MDR', phenotypeRate:4.3, topMaterial:'Кишечный материал', materialRate:87, trend:1.2 },
   };
 
   const drugDetails = {
@@ -48,6 +48,14 @@
 
   const fmt = (n) => Math.round(n).toLocaleString('ru-RU');
   const pct = (n) => Number(n).toFixed(1).replace('.', ',') + '%';
+  const ci95 = (percent, n) => {
+    const p = Number(percent) / 100;
+    const z = 1.96;
+    const den = 1 + z*z/n;
+    const centre = (p + z*z/(2*n)) / den;
+    const margin = z * Math.sqrt((p*(1-p) + z*z/(4*n))/n) / den;
+    return [Math.max(0, (centre-margin)*100), Math.min(100, (centre+margin)*100)].map((value) => value.toFixed(1).replace('.', ',')).join('–');
+  };
   const riskClass = (n) => n >= 40 ? 'adv-high' : n >= 20 ? 'adv-mid' : 'adv-low';
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
 
@@ -82,10 +90,10 @@
     showView(`
       <div class="adv-head"><div><span class="adv-kicker">Карточка микроорганизма</span><h1><i>${name}</i></h1><p>${d.group} · ${d.gram} · демонстрационный профиль Казахстана</p></div>${backButton('Микроорганизмы')}</div>
       <div class="adv-kpis">
-        <article><span>Изолятов</span><strong>${fmt(d.isolates)}</strong><small>2026</small></article>
-        <article><span>Средняя R</span><strong class="${riskClass(d.r)}">${pct(d.r)}</strong><small>↑ ${Math.abs(d.trend).toFixed(1).replace('.', ',')} п.п.</small></article>
-        <article><span>MDR</span><strong>${pct(d.mdr)}</strong><small>множественная резистентность</small></article>
-        <article><span>${d.phenotype}</span><strong>${pct(d.phenotypeRate)}</strong><small>ключевой фенотип</small></article>
+        <article><span>Изолятов</span><strong>${fmt(d.isolates)}</strong><small>2026 YTD · demo</small></article>
+        <article><span>%R · ${d.marker}</span><strong class="${riskClass(d.r)}">${pct(d.r)}</strong><small>${fmt(d.markerN)} протестировано · 95% ДИ ${ci95(d.r,d.markerN)}</small></article>
+        <article><span>MDR · demo v0.1</span><strong>${pct(d.mdr)}</strong><small>проект определения</small></article>
+        <article><span>${d.phenotype} · предполагаемый</span><strong>${pct(d.phenotypeRate)}</strong><small>без молекулярного подтверждения</small></article>
         <article><span>Главный материал</span><strong>${d.topMaterial}</strong><small>${d.materialRate}% изолятов</small></article>
       </div>
       <div class="adv-grid-2">
@@ -94,21 +102,23 @@
         </section>
         <section class="adv-panel"><div class="adv-panel-head"><div><h2>Профиль изолятов</h2><p>Структура выборки</p></div></div>
           <div class="donut-wrap"><div class="fake-donut" style="--a:${d.materialRate};--b:${Math.max(8,70-d.materialRate)}"></div><div class="donut-legend"><span><i></i>${d.topMaterial}<b>${d.materialRate}%</b></span><span><i></i>Кровь<b>${Math.max(8,Math.round((100-d.materialRate)*.34))}%</b></span><span><i></i>Другие материалы<b>${100-d.materialRate-Math.max(8,Math.round((100-d.materialRate)*.34))}%</b></span></div></div>
-          <div class="adv-note"><strong>Интерпретация</strong><p>Здесь будет автоматически формироваться краткое описание тренда на основе реальных данных WHONET и выбранного периода.</p></div>
+          <div class="adv-note"><strong>Интерпретация</strong><p>Демонстрационный фенотипический профиль. Не является клинической рекомендацией и не подтверждает наличие конкретного гена.</p></div>
         </section>
       </div>
-      <section class="adv-panel"><div class="adv-panel-head"><div><h2>Динамика 2020–2026</h2><p>Средняя резистентность, %</p></div><div class="adv-chip">${name}</div></div>
+      <section class="adv-panel"><div class="adv-panel-head"><div><h2>Динамика 2020–2026 YTD</h2><p>%R · ${name} × ${d.marker}</p></div><div class="adv-chip">N ≥ 30</div></div>
         <div class="adv-line-chart"><div class="chart-bars">${[.68,.72,.76,.81,.86,.92,1].map((m,i)=>`<div><i style="height:${Math.min(90,d.r*m+20)}%"></i><span>${2020+i}</span></div>`).join('')}</div></div>
       </section>`, `AMR Atlas <span>›</span> Микроорганизмы <span>›</span> ${name}`);
   }
 
   function openDrugDetail(name) {
     const d = drugDetails[name] || drugDetails['Цефтриаксон'];
+    const marker = d.organisms[0];
+    const markerN = Math.max(30, Math.round(d.tested * .45));
     showView(`
       <div class="adv-head"><div><span class="adv-kicker">Карточка антибиотика</span><div class="drug-title"><span>${d.code}</span><div><h1>${name}</h1><p>${d.cls} · ${d.spectrum}</p></div></div></div>${backButton('Антибиотики')}</div>
       <div class="adv-kpis">
         <article><span>AST результатов</span><strong>${fmt(d.tested)}</strong><small>в демо-наборе</small></article>
-        <article><span>Средняя R</span><strong class="${riskClass(d.r)}">${pct(d.r)}</strong><small>по всем организмам</small></article>
+        <article><span>%R · ${marker[0]}</span><strong class="${riskClass(marker[1])}">${pct(marker[1])}</strong><small>${fmt(markerN)} протестировано · 95% ДИ ${ci95(marker[1],markerN)}</small></article>
         <article><span>Изменение</span><strong>↑ ${d.trend.toFixed(1).replace('.', ',')} п.п.</strong><small>к базовому периоду</small></article>
         <article><span>Класс</span><strong>${d.code}</strong><small>${d.cls}</small></article>
       </div>
@@ -116,9 +126,9 @@
         <section class="adv-panel"><div class="adv-panel-head"><div><h2>Резистентность по организмам</h2><p>${name}</p></div></div>
           <div class="org-bars">${d.organisms.map(([org,r])=>`<button data-open-organism="${org.replace('E. coli','Escherichia coli').replace('K. pneumoniae','Klebsiella pneumoniae').replace('P. aeruginosa','Pseudomonas aeruginosa').replace('A. baumannii','Acinetobacter baumannii').replace('S. aureus','Staphylococcus aureus').replace('E. faecium','Enterococcus faecium').replace('S. pneumoniae','Streptococcus pneumoniae')}"><span>${org}</span><i><u style="width:${Math.max(2,r)}%"></u></i><b class="${riskClass(r)}">${pct(r)}</b></button>`).join('')}</div>
         </section>
-        <section class="adv-panel"><div class="adv-panel-head"><div><h2>AST и breakpoint</h2><p>Будущий интерпретационный слой</p></div></div>
-          <div class="method-stack"><div><span>Стандарт</span><strong>EUCAST / CLSI</strong></div><div><span>Версия</span><strong>хранится с результатом</strong></div><div><span>Исходное значение</span><strong>MIC / zone diameter</strong></div><div><span>Категория</span><strong>S / I / R</strong></div></div>
-          <div class="adv-note"><strong>Важно</strong><p>В рабочей версии карточка будет разделять исходное измерение AST и рассчитанную категорию интерпретации.</p></div>
+        <section class="adv-panel"><div class="adv-panel-head"><div><h2>AST и breakpoint</h2><p>Паспорт демонстрационного показателя</p></div></div>
+          <div class="method-stack"><div><span>Стандарт</span><strong>EUCAST</strong></div><div><span>Версия</span><strong>2026 · demo mapping</strong></div><div><span>Исходное значение</span><strong>MIC / диаметр зоны</strong></div><div><span>Категория</span><strong>S / I / R</strong></div></div>
+          <div class="adv-note"><strong>Важно</strong><p>I означает «чувствительный при увеличенной экспозиции». R рассчитывается только среди интерпретируемых протестированных изолятов; правило дедупликации — первый изолят пациента × организм × отчётный период.</p></div>
         </section>
       </div>`, `AMR Atlas <span>›</span> Антибиотики <span>›</span> ${name}`);
   }

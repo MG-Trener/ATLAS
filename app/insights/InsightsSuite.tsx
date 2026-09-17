@@ -81,6 +81,14 @@ function linePoints(values: number[], width = 600, height = 180) {
   return values.map((value, index) => `${(index / (values.length - 1)) * width},${height - ((value - min) / range) * height}`).join(" ");
 }
 
+function proportionCi95(percent: number, total: number) {
+  const n = Math.max(1, total), x = Math.round(n * percent / 100), p = x / n, z = 1.959964;
+  const denominator = 1 + z * z / n;
+  const centre = (p + z * z / (2 * n)) / denominator;
+  const margin = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denominator;
+  return [Math.max(0, (centre - margin) * 100), Math.min(100, (centre + margin) * 100)];
+}
+
 export default function InsightsSuite() {
   const [section, setSection] = useState<Section>("map");
   const [selectedRegion, setSelectedRegion] = useState("Астана");
@@ -97,9 +105,9 @@ export default function InsightsSuite() {
 
   const summary = useMemo(() => {
     const isolates = regionRows.reduce((sum, item) => sum + item.isolates, 0);
-    const weighted = regionRows.reduce((sum, item) => sum + item.resistance * item.isolates, 0) / isolates;
+    const pairR = regionRows.reduce((sum, item) => sum + item.resistance * item.isolates, 0) / isolates;
     const mdr = regionRows.reduce((sum, item) => sum + item.mdr * item.isolates, 0) / isolates;
-    return { isolates, weighted, mdr, labs: regionRows.reduce((sum, item) => sum + item.labs, 0) };
+    return { isolates, pairR, mdr, labs: regionRows.reduce((sum, item) => sum + item.labs, 0) };
   }, []);
 
   const filteredSignals = signalFilter === "Все" ? signals : signals.filter((item) => item.level === signalFilter);
@@ -130,7 +138,7 @@ export default function InsightsSuite() {
 
         <div className={styles.content}>
           <section className={styles.hero}>
-            <div><span className={styles.eyebrow}>Национальная аналитическая витрина</span><h1>{title}</h1><p>{organism} · {antibiotic} · {material} · 2020–2026</p></div>
+            <div><span className={styles.eyebrow}>Национальная аналитическая витрина</span><h1>{title}</h1><p>{organism} · {antibiotic} · {material} · 2020–2026 YTD</p></div>
             <div className={styles.heroActions}><button className={styles.secondary}><Layers3 size={15} /> Слои</button><button className={styles.primary}><SlidersHorizontal size={15} /> Сохранить вид</button></div>
           </section>
 
@@ -138,13 +146,13 @@ export default function InsightsSuite() {
             <label><span>Микроорганизм</span><select value={organism} onChange={(event) => setOrganism(event.target.value)}>{organisms.map((item) => <option key={item}>{item}</option>)}</select></label>
             <label><span>Антибиотик</span><select value={antibiotic} onChange={(event) => setAntibiotic(event.target.value)}>{antibiotics.map((item) => <option key={item}>{item}</option>)}</select></label>
             <label><span>Материал</span><select value={material} onChange={(event) => setMaterial(event.target.value)}><option>Все материалы</option><option>Кровь</option><option>Моча</option><option>Респираторный материал</option></select></label>
-            <label><span>Период</span><select defaultValue="2020–2026"><option>2020–2026</option><option>2026</option><option>2024–2026</option></select></label>
+            <label><span>Период</span><select defaultValue="2020–2026"><option>2020–2026</option><option>2026 YTD</option><option>2024–2026</option></select></label>
           </section>
 
           <section className={styles.stats}>
-            <article><Activity size={19} /><span><small>Средняя резистентность</small><strong>{summary.weighted.toFixed(1)}%</strong><em>+4,1 п.п. за 3 года</em></span></article>
-            <article><Microscope size={19} /><span><small>Изолятов</small><strong>{formatNumber(summary.isolates)}</strong><em>демонстрационная выборка</em></span></article>
-            <article><AlertTriangle size={19} /><span><small>MDR</small><strong>{summary.mdr.toFixed(1)}%</strong><em>множественная резистентность</em></span></article>
+            <article><Activity size={19} /><span><small>%R · выбранная пара</small><strong>{summary.pairR.toFixed(1)}%</strong><em>R / N tested · demo</em></span></article>
+            <article><Microscope size={19} /><span><small>N tested</small><strong>{formatNumber(summary.isolates)}</strong><em>интерпретируемые AST</em></span></article>
+            <article><AlertTriangle size={19} /><span><small>MDR · demo v0.1</small><strong>{summary.mdr.toFixed(1)}%</strong><em>определение ожидает утверждения</em></span></article>
             <article><ShieldCheck size={19} /><span><small>Лабораторий</small><strong>{summary.labs}</strong><em>условное покрытие</em></span></article>
           </section>
 
@@ -156,11 +164,11 @@ export default function InsightsSuite() {
               </article>
 
               <article className={styles.panel}>
-                <div className={styles.panelHead}><div><h2>{region.name}</h2><p>Выбранный регион · 2026</p></div><MapPinned size={19} /></div>
-                <div className={styles.regionKpis}><div><span>R</span><strong>{region.resistance}%</strong></div><div><span>MDR</span><strong>{region.mdr}%</strong></div><div><span>Изолятов</span><strong>{formatNumber(region.isolates)}</strong></div><div><span>Лаб.</span><strong>{region.labs}</strong></div></div>
+                <div className={styles.panelHead}><div><h2>{region.name}</h2><p>Выбранный регион · 2026 YTD</p></div><MapPinned size={19} /></div>
+                <div className={styles.regionKpis}><div><span>R</span><strong>{region.resistance}%</strong></div><div><span>95% ДИ</span><strong>{proportionCi95(region.resistance,region.isolates).map(v=>v.toFixed(1)).join("–")}</strong></div><div><span>N tested</span><strong>{formatNumber(region.isolates)}</strong></div><div><span>Лаб.</span><strong>{region.labs}</strong></div></div>
                 <div className={styles.change}><span>Изменение за 3 года</span><strong className={region.delta > 0 ? styles.bad : styles.good}>{region.delta > 0 ? <TrendingUp size={15} /> : <TrendingDown size={15} />}{region.delta > 0 ? "+" : ""}{region.delta} п.п.</strong></div>
                 <button className={styles.fullButton} onClick={() => { setCompareA(region.name); setSection("compare"); }}><GitCompareArrows size={15} /> Сравнить этот регион</button>
-                <div className={styles.regionRanking}><strong>Топ по резистентности</strong>{[...regionRows].sort((x,y) => y.resistance - x.resistance).slice(0,6).map((item, index) => <button key={item.name} onClick={() => setSelectedRegion(item.name)}><span>{index + 1}. {item.name}</span><b>{item.resistance}%</b></button>)}</div>
+                <div className={styles.regionRanking}><strong>Как читать сравнение</strong><button><span>Минимум для публикации</span><b>N ≥ 30</b></button><button><span>Неопределённость</span><b>95% ДИ</b></button><button><span>Территории</span><b>без рейтинга</b></button></div>
               </article>
             </section>
           )}
@@ -179,8 +187,8 @@ export default function InsightsSuite() {
               </article>
 
               <article className={`${styles.panel} ${styles.wide}`}>
-                <div className={styles.panelHead}><div><h2>Региональная таблица</h2><p>Сортировка по доле резистентных изолятов</p></div><span className={styles.mini}>20 регионов / городов</span></div>
-                <div className={styles.regionTable}><div><span>Регион</span><span>R</span><span>MDR</span><span>Изоляты</span><span>Δ 3 года</span><span>Лаб.</span></div>{[...regionRows].sort((x,y)=>y.resistance-x.resistance).map((item) => <button key={item.name} onClick={() => { setSelectedRegion(item.name); setSection("map"); }}><strong>{item.name}</strong><span>{item.resistance}%</span><span>{item.mdr}%</span><span>{formatNumber(item.isolates)}</span><span className={item.delta > 0 ? styles.bad : styles.good}>{item.delta > 0 ? "+" : ""}{item.delta}</span><span>{item.labs}</span></button>)}</div>
+                <div className={styles.panelHead}><div><h2>Региональная таблица</h2><p>Алфавитный порядок · без рейтинга территорий</p></div><span className={styles.mini}>20 регионов / городов</span></div>
+                <div className={styles.regionTable}><div><span>Регион</span><span>R</span><span>MDR</span><span>N tested</span><span>Δ 3 года</span><span>Лаб.</span></div>{[...regionRows].sort((x,y)=>x.name.localeCompare(y.name,"ru")).map((item) => <button key={item.name} onClick={() => { setSelectedRegion(item.name); setSection("map"); }}><strong>{item.name}</strong><span>{item.resistance}%</span><span>{item.mdr}%</span><span>{formatNumber(item.isolates)}</span><span className={item.delta > 0 ? styles.bad : styles.good}>{item.delta > 0 ? "+" : ""}{item.delta}</span><span>{item.labs}</span></button>)}</div>
               </article>
             </section>
           )}
@@ -190,14 +198,14 @@ export default function InsightsSuite() {
               <article className={`${styles.panel} ${styles.comparePanel}`}>
                 <div className={styles.panelHead}><div><h2>Сравнение двух регионов</h2><p>Одинаковый фильтр микроорганизма, антибиотика и материала</p></div><GitCompareArrows size={19} /></div>
                 <div className={styles.compareSelectors}><label><span>Регион A</span><select value={compareA} onChange={(e)=>setCompareA(e.target.value)}>{regionRows.map(r=><option key={r.name}>{r.name}</option>)}</select></label><label><span>Регион B</span><select value={compareB} onChange={(e)=>setCompareB(e.target.value)}>{regionRows.map(r=><option key={r.name}>{r.name}</option>)}</select></label></div>
-                <div className={styles.compareCards}><div><span>A</span><h3>{a.name}</h3><strong>{a.resistance}% R</strong><small>{formatNumber(a.isolates)} изолятов</small></div><div className={styles.vs}>VS</div><div><span>B</span><h3>{b.name}</h3><strong>{b.resistance}% R</strong><small>{formatNumber(b.isolates)} изолятов</small></div></div>
+                <div className={styles.compareCards}><div><span>A</span><h3>{a.name}</h3><strong>{a.resistance}% R</strong><small>95% ДИ {proportionCi95(a.resistance,a.isolates).map(v=>v.toFixed(1)).join("–")} · N {formatNumber(a.isolates)}</small></div><div className={styles.vs}>VS</div><div><span>B</span><h3>{b.name}</h3><strong>{b.resistance}% R</strong><small>95% ДИ {proportionCi95(b.resistance,b.isolates).map(v=>v.toFixed(1)).join("–")} · N {formatNumber(b.isolates)}</small></div></div>
                 <div className={styles.compareRows}>{[["Резистентность",a.resistance,b.resistance,"%"],["MDR",a.mdr,b.mdr,"%"],["Рост за 3 года",a.delta,b.delta," п.п."],["Лаборатории",a.labs,b.labs,""]].map(([label,av,bv,suffix]) => <div key={String(label)}><strong>{label}</strong><span><b>{av}{suffix}</b><i><em style={{width:`${Math.min(100,Number(av)*2.2)}%`}} /></i></span><span><b>{bv}{suffix}</b><i><em style={{width:`${Math.min(100,Number(bv)*2.2)}%`}} /></i></span></div>)}</div>
               </article>
 
               <article className={styles.panel}>
                 <div className={styles.panelHead}><div><h2>Разница</h2><p>B относительно A</p></div><Activity size={19} /></div>
                 <div className={styles.deltaHero}><span>Δ R</span><strong className={b.resistance-a.resistance>0?styles.bad:styles.good}>{b.resistance-a.resistance>0?"+":""}{(b.resistance-a.resistance).toFixed(1)} п.п.</strong></div>
-                <p className={styles.explain}>{Math.abs(b.resistance-a.resistance) < 3 ? "Профили близки: разница менее 3 п.п." : b.resistance > a.resistance ? `${b.name} имеет более высокий демонстрационный уровень резистентности.` : `${a.name} имеет более высокий демонстрационный уровень резистентности.`}</p>
+                <p className={styles.explain}>Описательная разница демонстрационных значений. Она не доказывает различие без проверки 95% ДИ, одинакового периода, лабораторного покрытия и структуры выборки.</p>
                 <button className={styles.fullButton} onClick={()=>{setSelectedRegion(b.name);setSection("map");}}><MapPinned size={15}/> Открыть регион B на карте</button>
               </article>
             </section>

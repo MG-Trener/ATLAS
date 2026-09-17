@@ -21,7 +21,7 @@
   let activeLayer = 'resistance';
   let activeLang = localStorage.getItem('atlas-preview-language') || 'ru';
   let selected = null;
-  let regionSelect=null, compareBox=null, rankingList=null;
+  let regionSelect=null, compareBox=null;
 
   const names = {
     KZ10:['Абайская область','Абай облысы','Abay Region'],KZ11:['Акмолинская область','Ақмола облысы','Akmola Region'],KZ15:['Актюбинская область','Ақтөбе облысы','Aktobe Region'],KZ19:['Алматинская область','Алматы облысы','Almaty Region'],KZ23:['Атырауская область','Атырау облысы','Atyrau Region'],KZ27:['Западно-Казахстанская область','Батыс Қазақстан облысы','West Kazakhstan Region'],KZ31:['Жамбылская область','Жамбыл облысы','Zhambyl Region'],KZ33:['Жетысуская область','Жетісу облысы','Zhetysu Region'],KZ35:['Карагандинская область','Қарағанды облысы','Karaganda Region'],KZ39:['Костанайская область','Қостанай облысы','Kostanay Region'],KZ43:['Кызылординская область','Қызылорда облысы','Kyzylorda Region'],KZ47:['Мангистауская область','Маңғыстау облысы','Mangystau Region'],KZ55:['Павлодарская область','Павлодар облысы','Pavlodar Region'],KZ59:['Северо-Казахстанская область','Солтүстік Қазақстан облысы','North Kazakhstan Region'],KZ61:['Туркестанская область','Түркістан облысы','Turkistan Region'],KZ62:['Улытауская область','Ұлытау облысы','Ulytau Region'],KZ63:['Восточно-Казахстанская область','Шығыс Қазақстан облысы','East Kazakhstan Region'],KZ71:['Астана','Астана','Astana'],KZ75:['Алматы','Алматы','Almaty'],KZ79:['Шымкент','Шымкент','Shymkent']
@@ -43,6 +43,7 @@
   const color = v => v>=34?'#d96c70':v>=26?'#d8a35c':v>=18?'#6caec5':'#9bcfc4';
   const pct = v => `${Number(v).toLocaleString(locale(),{minimumFractionDigits:1,maximumFractionDigits:1})}%`;
   const formatInt = v => Math.round(v).toLocaleString(locale());
+  const ci95=(value,n)=>{const z=1.959964,p=value/100,den=1+z*z/n,mid=(p+z*z/(2*n))/den,margin=z*Math.sqrt(p*(1-p)/n+z*z/(4*n*n))/den;return[pct(Math.max(0,(mid-margin)*100)),pct(Math.min(100,(mid+margin)*100))]};
   const layerLabel = () => ({resistance:['Резистентность','Төзімділік','Resistance'],esbl:['ESBL','ESBL','ESBL'],cre:['CRE','CRE','CRE'],mrsa:['MRSA','MRSA','MRSA']})[activeLayer][langIndex()];
   const demoLabel = () => text('демонстрационные значения','демонстрациялық мәндер','demo values');
 
@@ -59,7 +60,7 @@
     const controls=document.createElement('div');controls.className='atlas-map-controls2';controls.innerHTML=`<button type="button" data-map-action="labels">${text('Скрыть %','% жасыру','Hide %')}</button><button type="button" data-map-action="focus">${text('Фокус','Фокус','Focus')}</button><button type="button" data-map-action="reset">${text('Сбросить','Қалпына келтіру','Reset')}</button>`;canvas?.appendChild(controls);
     controls.addEventListener('click',e=>{const btn=e.target.closest('button');if(!btn)return;const action=btn.dataset.mapAction;if(action==='labels'){canvas.classList.toggle('labels-off');btn.classList.toggle('active');btn.textContent=canvas.classList.contains('labels-off')?text('Показать %','% көрсету','Show %'):text('Скрыть %','% жасыру','Hide %')}if(action==='focus'){canvas.classList.toggle('focused');btn.classList.toggle('active')}if(action==='reset'){canvas.classList.remove('focused');updateSelected(null)}});
 
-    if(insightRail){const ranking=document.createElement('section');ranking.className='atlas-ranking';ranking.innerHTML=`<div class="atlas-ranking-head"><strong>${text('РЕЙТИНГ ТЕРРИТОРИЙ','ӨҢІРЛЕР РЕЙТИНГІ','TERRITORY RANKING')}</strong><span>${layerLabel()}</span></div><div class="atlas-ranking-list"></div>`;insightRail.appendChild(ranking);rankingList=ranking.querySelector('.atlas-ranking-list')}
+    if(insightRail){const guidance=document.createElement('section');guidance.className='atlas-ranking atlas-method-note';guidance.innerHTML=`<div class="atlas-ranking-head"><strong>${text('КАК ЧИТАТЬ КАРТУ','КАРТАНЫ ҚАЛАЙ ОҚУ КЕРЕК','HOW TO READ THE MAP')}</strong><span>DEMO</span></div><div class="atlas-ranking-list"><div class="atlas-rank-row"><span>N</span><strong>${text('Минимум для публикации','Жариялау минимумы','Publication minimum')}</strong><b>≥ 30</b></div><div class="atlas-rank-row"><span>CI</span><strong>${text('Неопределённость оценки','Бағалаудың белгісіздігі','Estimate uncertainty')}</strong><b>95%</b></div><div class="atlas-rank-row"><span>AST</span><strong>${text('Стандарт и версия','Стандарт және нұсқа','Standard and version')}</strong><b>EUCAST</b></div></div>`;insightRail.appendChild(guidance)}
   }
 
   function populateRegionSelect(){
@@ -77,19 +78,11 @@
     const nat=nationalValue();
     const sorted=regions.slice().sort((a,b)=>layerValue(b)-layerValue(a));
     const median=sorted.length?layerValue(sorted[Math.floor(sorted.length/2)]):nat;
-    const rank=selected?sorted.findIndex(r=>r.pcode===selected.pcode)+1:null;
-    const completeness=selected?84+(hash(selected.pcode+'Q')%14):94;
+    const tested=selected?Math.round(1800+base(selected)*120):6496;
+    const interval=ci95(regionVal,tested);
     const delta=regionVal-nat;
     const max=Math.max(45,regionVal,nat,median)*1.08;
-    compareBox.innerHTML=`<div class="atlas-compare-title"><strong>${text('Сравнение с национальным уровнем','Ұлттық деңгеймен салыстыру','Compare with national level')}</strong><span>${layerLabel()}</span></div><div class="atlas-compare-bars"><div class="atlas-compare-row"><span>${selected?displayName(selected):text('Казахстан','Қазақстан','Kazakhstan')}</span><i><b style="width:${Math.min(100,regionVal/max*100)}%"></b></i><strong>${pct(regionVal)}</strong></div><div class="atlas-compare-row"><span>${text('Казахстан','Қазақстан','Kazakhstan')}</span><i><b style="width:${Math.min(100,nat/max*100)}%"></b></i><strong>${pct(nat)}</strong></div><div class="atlas-compare-row"><span>${text('Медиана регионов','Өңірлер медианасы','Regional median')}</span><i><b style="width:${Math.min(100,median/max*100)}%"></b></i><strong>${pct(median)}</strong></div></div><div class="atlas-compare-summary"><div><b>${rank?`${rank} / ${regions.length}`:'—'}</b><span>${text('место по слою','қабат бойынша орын','rank for layer')}</span></div><div><b>${selected?(delta>=0?'+':'')+delta.toLocaleString(locale(),{minimumFractionDigits:1,maximumFractionDigits:1})+' п.п.':'—'}</b><span>${text('к уровню страны','ел деңгейіне','vs country')}</span></div><div><b>${completeness}%</b><span>${text('полнота данных','деректер толықтығы','data completeness')}</span></div></div>`;
-  }
-
-  function updateRanking(){
-    if(!rankingList)return;
-    const top=regions.slice().sort((a,b)=>layerValue(b)-layerValue(a)).slice(0,5);
-    rankingList.innerHTML=top.map((r,i)=>`<div class="atlas-rank-row" data-pcode="${r.pcode}"><span>${i+1}</span><strong>${displayName(r)}</strong><b>${pct(layerValue(r))}</b></div>`).join('');
-    rankingList.querySelectorAll('.atlas-rank-row').forEach(row=>row.addEventListener('click',()=>updateSelected(regions.find(r=>r.pcode===row.dataset.pcode)||null)));
-    const head=document.querySelector('.atlas-ranking-head span');if(head)head.textContent=layerLabel();
+    compareBox.innerHTML=`<div class="atlas-compare-title"><strong>${text('Сравнение с национальным уровнем','Ұлттық деңгеймен салыстыру','Compare with national level')}</strong><span>${layerLabel()}</span></div><div class="atlas-compare-bars"><div class="atlas-compare-row"><span>${selected?displayName(selected):text('Казахстан','Қазақстан','Kazakhstan')}</span><i><b style="width:${Math.min(100,regionVal/max*100)}%"></b></i><strong>${pct(regionVal)}</strong></div><div class="atlas-compare-row"><span>${text('Казахстан','Қазақстан','Kazakhstan')}</span><i><b style="width:${Math.min(100,nat/max*100)}%"></b></i><strong>${pct(nat)}</strong></div><div class="atlas-compare-row"><span>${text('Медиана регионов','Өңірлер медианасы','Regional median')}</span><i><b style="width:${Math.min(100,median/max*100)}%"></b></i><strong>${pct(median)}</strong></div></div><div class="atlas-compare-summary"><div><b>${interval.join('–')}</b><span>95% CI</span></div><div><b>${formatInt(tested)}</b><span>N tested</span></div><div><b>${selected?(delta>=0?'+':'')+delta.toLocaleString(locale(),{minimumFractionDigits:1,maximumFractionDigits:1})+' п.п.':'—'}</b><span>${text('без ранжирования','рейтингсіз','no ranking')}</span></div></div>`;
   }
 
   function updateSelected(r){
@@ -124,7 +117,6 @@
       if(r.cx&&r.cy){const label=document.createElementNS('http://www.w3.org/2000/svg','text');label.setAttribute('x',r.cx);label.setAttribute('y',r.cy);label.setAttribute('text-anchor','middle');label.classList.add('atlas-region-label');label.textContent=`${Math.round(value)}%`;map.appendChild(label)}
     });
     layerCaption.textContent=`${layerLabel()} · ${demoLabel()}`;
-    updateRanking();
   }
   function moveTooltip(e){const bounds=canvas.getBoundingClientRect();tooltip.style.left=`${Math.min(bounds.width-190,Math.max(10,e.clientX-bounds.left+14))}px`;tooltip.style.top=`${Math.min(bounds.height-80,Math.max(10,e.clientY-bounds.top+14))}px`}
 

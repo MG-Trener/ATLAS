@@ -18,6 +18,9 @@
       brandSub:'Data today.<br>Health tomorrow.',dashboard:'Overview',organisms:'Microorganisms',antimicrobials:'Antimicrobials',map:'Map',sourceTitle:'Reference source',liveDb:'Supabase connected',back:'← Back to overview',atlas:'AMR Atlas',reference:'Reference',title:'Microorganism and antimicrobial reference catalog',subtitle:'Complete structured WHONET catalog with taxonomy, codes, AWaRe classification and expanded clinical descriptions.',activeVersion:'Active version',organismCodes:'WHONET organism codes',drugCodes:'Antimicrobial codes',fullSource:'complete source',accessMode:'Website access',readOnly:'Read only',searchOrganisms:'Code, name, genus, family…',searchDrugs:'Code, agent, class, ATC…',reset:'Reset',perPage:'Per page',loading:'Loading reference data from Supabase…',prev:'Previous',next:'Next',selectRecord:'Select a record',selectRecordText:'Description, classification, identifiers and clinical relevance will appear here.',descriptionPolicy:'How descriptions work',descriptionPolicyText:'Every record includes structured WHONET metadata. Expanded clinical text in Russian, Kazakh and English is being added progressively for priority AMR pathogens and agents.',allKingdoms:'All kingdoms',allStatuses:'All statuses',commonOnly:'Common only',currentOnly:'Current nomenclature',obsoleteOnly:'Obsolete / replaced',allAware:'All WHO AWaRe',allScopes:'All scopes',human:'Human',veterinary:'Veterinary',results:'records',page:'Page',of:'of',noResults:'No results found',loadError:'Could not load the Supabase reference catalog.',code:'WHONET code',taxonomy:'Taxonomy',identifiers:'Identifiers',clinical:'Clinical significance',amr:'AMR relevance',aliases:'Aliases / variants',status:'Status',common:'Common',yes:'Yes',no:'No',kingdom:'Kingdom',phylum:'Phylum',class:'Class',order:'Order',family:'Family',genus:'Genus',snomed:'SNOMED CT',gbif:'GBIF Taxon ID',replacedBy:'Replaced by',agentClass:'Agent class',subclass:'Subclass',aware:'WHO AWaRe',atc:'ATC',scope:'Scope',guidelines:'Guidelines / sources',potencies:'Disk / concentration variants',mechanism:'Mechanism of action',clinicalNote:'Clinical / AMR note',structured:'Structured WHONET record',priority:'AMR priority',humanVet:'Human / veterinary',unknown:'—',current:'Current',obsolete:'Obsolete / alternative',all:'All'
     }
   };
+  Object.assign(dict.ru,{priorityCrab:'WHO BPPL 2024: карбапенем-резистентный A. baumannii · критический приоритет',astContext:'Важно: breakpoint, категория S/I/R и допустимый метод зависят от пары организм × препарат, стандарта и его версии. Перечень дисков ниже — справочная метаинформация WHONET, а не универсальная инструкция по тестированию.'});
+  Object.assign(dict.kk,{priorityCrab:'WHO BPPL 2024: карбапенемге төзімді A. baumannii · критикалық басымдық',astContext:'Маңызды: breakpoint, S/I/R санаты және рұқсат етілген әдіс организм × препарат жұбына, стандартқа және оның нұсқасына тәуелді. Төмендегі дискілер тізімі — әмбебап тестілеу нұсқауы емес, WHONET анықтамалық метадеректері.'});
+  Object.assign(dict.en,{priorityCrab:'WHO BPPL 2024: carbapenem-resistant A. baumannii · critical priority',astContext:'Important: breakpoints, S/I/R categories and valid methods depend on the organism × agent pair, standard and version. Disk variants below are WHONET reference metadata, not universal testing instructions.'});
 
   const state = {
     language: ['ru','kk','en'].includes(localStorage.getItem('atlas-preview-language')) ? localStorage.getItem('atlas-preview-language') : 'ru',
@@ -38,6 +41,7 @@
   const clean = (value) => value == null || value === '' ? t('unknown') : value;
   const list = (value) => Array.isArray(value) ? value.filter(Boolean) : [];
   const langField = (row, base) => row[`${base}_${state.language}`] || row[`${base}_en`] || row[`${base}_ru`] || row[base] || '';
+  const priorityLabel = row => row.whonet_code === 'aba' && /critical/i.test(row.priority_tag || '') ? t('priorityCrab') : row.priority_tag;
 
   function applyLanguage() {
     document.documentElement.lang = state.language === 'kk' ? 'kk' : state.language;
@@ -185,7 +189,7 @@
       const amr = langField(row, 'amr_relevance');
       const statusLabel = row.taxonomic_status === 'C' ? t('current') : row.taxonomic_status === 'O' ? t('obsolete') : row.taxonomic_status;
       els.detail.innerHTML = `<div class="detail-card">
-        <div class="detail-top"><div><span class="detail-kicker">${esc(t('structured'))}</span><h2><i>${esc(row.organism)}</i></h2><p>${esc(row.priority_tag || [row.kingdom,row.family].filter(Boolean).join(' · '))}</p></div><span class="detail-code">${esc(row.whonet_code)}</span></div>
+        <div class="detail-top"><div><span class="detail-kicker">${esc(t('structured'))}</span><h2><i>${esc(row.organism)}</i></h2><p>${esc(priorityLabel(row) || [row.kingdom,row.family].filter(Boolean).join(' · '))}</p></div><span class="detail-code">${esc(row.whonet_code)}</span></div>
         <div class="detail-description">${esc(description || `${t('code')}: ${row.whonet_code}`)}</div>
         <section class="detail-section"><h3>${esc(t('taxonomy'))}</h3>${grid([[t('status'),statusLabel],[t('common'),row.is_common?t('yes'):t('no')],[t('kingdom'),row.kingdom],[t('phylum'),row.phylum],[t('class'),row.taxonomic_class],[t('order'),row.taxonomic_order],[t('family'),row.family],[t('genus'),row.genus]])}</section>
         <section class="detail-section"><h3>${esc(t('identifiers'))}</h3>${grid([[t('code'),row.whonet_code],[t('snomed'),row.sct_code],[t('gbif'),row.gbif_taxon_id],[t('replacedBy'),row.replaced_by]])}</section>
@@ -203,6 +207,7 @@
     els.detail.innerHTML = `<div class="detail-card">
       <div class="detail-top"><div><span class="detail-kicker">${esc(t('structured'))}</span><h2>${esc(displayName)}</h2><p>${esc(row.antimicrobial)}</p></div><span class="detail-code">${esc(row.whonet_code)}</span></div>
       <div class="detail-description">${esc(description)}</div>
+      <div class="detail-description detail-method-warning">${esc(t('astContext'))}</div>
       <section class="detail-section"><h3>${esc(t('agentClass'))}</h3>${grid([[t('code'),row.whonet_code],[t('agentClass'),row.class_name],[t('subclass'),row.subclass],[t('aware'),row.who_aware],[t('atc'),row.atc_code],[t('scope'),scope || t('unknown')]])}</section>
       <section class="detail-section"><h3>${esc(t('guidelines'))}</h3>${grid([[t('guidelines'),row.guidelines],[t('priority'),row.profile_class],[t('humanVet'),scope || t('unknown')]])}</section>
       <section class="detail-section"><h3>${esc(t('potencies'))}</h3>${chips(row.potencies)}</section>

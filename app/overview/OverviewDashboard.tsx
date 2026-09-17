@@ -30,11 +30,11 @@ type Signal = {
 };
 
 const organisms = [
-  { name: "Klebsiella pneumoniae", value: 39.8, delta: 7.4, tag: "ESBL / CRE", n: 41760 },
-  { name: "Acinetobacter baumannii", value: 44.6, delta: 6.8, tag: "MDR", n: 12842 },
-  { name: "Escherichia coli", value: 28.6, delta: 4.1, tag: "ESBL", n: 84215 },
-  { name: "Pseudomonas aeruginosa", value: 31.2, delta: 3.5, tag: "MDR", n: 19384 },
-  { name: "Staphylococcus aureus", value: 21.7, delta: 1.9, tag: "MRSA", n: 26890 },
+  { name: "Acinetobacter baumannii", value: 44.6, delta: 6.8, marker: "MEM", tag: "CRAB · предполагаемый", n: 2842 },
+  { name: "Escherichia coli", value: 28.6, delta: 4.1, marker: "CRO", tag: "ESBL · предполагаемый", n: 14382 },
+  { name: "Klebsiella pneumoniae", value: 39.8, delta: 7.4, marker: "CRO", tag: "ESBL/CRE · предполагаемый", n: 9760 },
+  { name: "Pseudomonas aeruginosa", value: 31.2, delta: 3.5, marker: "MEM", tag: "MDR · demo v0.1", n: 4384 },
+  { name: "Staphylococcus aureus", value: 21.7, delta: 1.9, marker: "FOX", tag: "MRSA · предполагаемый", n: 6890 },
 ];
 
 const antibiotics = [
@@ -61,15 +61,24 @@ const coverage = [
 ];
 
 const regionHighlights = [
-  { name: "Восточно-Казахстанская", resistance: 36.4, delta: 5.4 },
-  { name: "Алматы", resistance: 33.1, delta: 3.7 },
-  { name: "Астана", resistance: 31.4, delta: 4.8 },
-  { name: "Карагандинская", resistance: 29.8, delta: 2.1 },
-  { name: "Павлодарская", resistance: 24.2, delta: -0.9 },
+  { name: "Алматы", resistance: 33.1, delta: 3.7, pair: "E. coli × CRO", n: 1680 },
+  { name: "Астана", resistance: 31.4, delta: 4.8, pair: "E. coli × CRO", n: 1420 },
+  { name: "Восточно-Казахстанская", resistance: 36.4, delta: 5.4, pair: "E. coli × CRO", n: 730 },
+  { name: "Карагандинская", resistance: 29.8, delta: 2.1, pair: "E. coli × CRO", n: 960 },
+  { name: "Павлодарская", resistance: 24.2, delta: -0.9, pair: "E. coli × CRO", n: 610 },
 ];
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat("ru-RU").format(value);
+}
+
+function ci95(percent: number, n: number) {
+  const p = percent / 100;
+  const z = 1.96;
+  const denominator = 1 + z * z / n;
+  const centre = (p + z * z / (2 * n)) / denominator;
+  const margin = z * Math.sqrt((p * (1 - p) + z * z / (4 * n)) / n) / denominator;
+  return `${Math.max(0, (centre - margin) * 100).toFixed(1)}–${Math.min(100, (centre + margin) * 100).toFixed(1)}%`;
 }
 
 function Sparkline({ values }: { values: number[] }) {
@@ -101,7 +110,7 @@ function Kpi({ icon: Icon, label, value, detail, tone }: { icon: typeof Activity
 }
 
 export default function OverviewDashboard() {
-  const [period, setPeriod] = useState("2026");
+  const [period, setPeriod] = useState("2026 YTD");
   const [material, setMaterial] = useState("Все материалы");
   const [signalFilter, setSignalFilter] = useState<"all" | Risk>("all");
 
@@ -134,7 +143,7 @@ export default function OverviewDashboard() {
         </section>
 
         <section className={styles.filters}>
-          <label><span>Период</span><select value={period} onChange={(event) => setPeriod(event.target.value)}><option>2026</option><option>2025</option><option>2024–2026</option><option>2020–2026</option></select></label>
+          <label><span>Период</span><select value={period} onChange={(event) => setPeriod(event.target.value)}><option>2026 YTD</option><option>2025</option><option>2024–2026</option><option>2020–2026 YTD</option></select></label>
           <label><span>Материал</span><select value={material} onChange={(event) => setMaterial(event.target.value)}><option>Все материалы</option><option>Кровь</option><option>Моча</option><option>Респираторный материал</option><option>Раны</option></select></label>
           <label><span>Регион</span><select defaultValue="Казахстан"><option>Казахстан</option><option>Астана</option><option>Алматы</option><option>Карагандинская</option><option>Восточно-Казахстанская</option></select></label>
           <label><span>Источник</span><select defaultValue="Все лаборатории"><option>Все лаборатории</option><option>WHONET</option><option>Ручной импорт</option></select></label>
@@ -143,17 +152,17 @@ export default function OverviewDashboard() {
 
         <section className={styles.kpiGrid}>
           <Kpi icon={FlaskConical} label="Изолятов в витрине" value="186 742" detail="валидные наблюдения" tone="blue" />
-          <Kpi icon={Activity} label="Средняя резистентность" value="29,8%" detail="сводный профиль R" tone="red" />
-          <Kpi icon={ShieldAlert} label="MDR" value="12,4%" detail="множественная устойчивость" tone="orange" />
+          <Kpi icon={Activity} label="%R · E. coli × CRO" value="28,6%" detail="4 113 / 14 382 · 95% ДИ 27,9–29,3" tone="red" />
+          <Kpi icon={ShieldAlert} label="MDR · demo v0.1" value="12,4%" detail="проект определения" tone="orange" />
           <Kpi icon={ShieldCheck} label="Покрытие регионов" value="20 / 20" detail="регионы и города респ. значения" tone="green" />
         </section>
 
         <section className={styles.mainGrid}>
           <article className={`${styles.panel} ${styles.trendPanel}`}>
-            <div className={styles.panelHead}><div><h2>Национальная динамика AMR</h2><p>Сводный индекс резистентности, 2020–2026</p></div><TrendingUp size={20} /></div>
-            <Sparkline values={[22.1, 23.0, 24.6, 25.9, 27.1, 28.4, 29.8]} />
-            <div className={styles.years}>{[2020,2021,2022,2023,2024,2025,2026].map((year) => <span key={year}>{year}</span>)}</div>
-            <div className={styles.trendFooter}><strong>+7,7 п.п.</strong><span>за 6 лет</span><i /> <span>наибольший вклад: β-лактамы и фторхинолоны</span></div>
+            <div className={styles.panelHead}><div><h2>Национальная динамика %R</h2><p>E. coli × цефтриаксон · 2020–2026 YTD</p></div><TrendingUp size={20} /></div>
+            <Sparkline values={[20.9, 22.0, 23.1, 24.4, 25.8, 27.2, 28.6]} />
+            <div className={styles.years}>{["2020","2021","2022","2023","2024","2025","2026 YTD"].map((year) => <span key={year}>{year}</span>)}</div>
+            <div className={styles.trendFooter}><strong>+7,7 п.п.</strong><span>за 6 лет</span><i /> <span>описательный демо-тренд; N и 95% ДИ обязательны при публикации</span></div>
           </article>
 
           <article className={`${styles.panel} ${styles.signalPanel}`}>
@@ -163,8 +172,8 @@ export default function OverviewDashboard() {
           </article>
 
           <article className={styles.panel}>
-            <div className={styles.panelHead}><div><h2>Микроорганизмы с наибольшим AMR</h2><p>Сводная резистентность и изменение за 3 года</p></div><Microscope size={20} /></div>
-            <div className={styles.rankList}>{organisms.map((item, index) => <Link href="/" key={item.name}><span className={styles.rank}>{index + 1}</span><div><strong>{item.name}</strong><small>{item.tag} · N {formatNumber(item.n)}</small></div><span className={styles.bar}><i style={{ width: `${item.value}%` }} /></span><b>{item.value.toFixed(1)}%</b><em>+{item.delta.toFixed(1)}</em></Link>)}</div>
+            <div className={styles.panelHead}><div><h2>Маркерные профили эпиднадзора</h2><p>Разные пары организм × препарат нельзя ранжировать между собой</p></div><Microscope size={20} /></div>
+            <div className={styles.rankList}>{organisms.map((item) => <Link href="/" key={item.name}><span className={styles.rank}>AST</span><div><strong>{item.name} × {item.marker}</strong><small>{item.tag} · N {formatNumber(item.n)} · 95% ДИ {ci95(item.value, item.n)}</small></div><span className={styles.bar}><i style={{ width: `${item.value}%` }} /></span><b>{item.value.toFixed(1)}%</b><em>{item.delta >= 0 ? "+" : ""}{item.delta.toFixed(1)}</em></Link>)}</div>
           </article>
 
           <article className={styles.panel}>
@@ -179,8 +188,8 @@ export default function OverviewDashboard() {
           </article>
 
           <article className={`${styles.panel} ${styles.regionPanel}`}>
-            <div className={styles.panelHead}><div><h2>Регионы, требующие внимания</h2><p>По уровню R и темпу изменения</p></div><BarChart3 size={20} /></div>
-            <div className={styles.regionList}>{regionHighlights.map((item) => <Link href="/insights" key={item.name}><span><strong>{item.name}</strong><small>{item.delta >= 0 ? "+" : ""}{item.delta} п.п. за 3 года</small></span><b>{item.resistance}% R</b><ArrowRight size={15} /></Link>)}</div>
+            <div className={styles.panelHead}><div><h2>Региональные сигналы для валидации</h2><p>Не рейтинг: одна маркерная пара, с учётом N и неопределённости</p></div><BarChart3 size={20} /></div>
+            <div className={styles.regionList}>{regionHighlights.map((item) => <Link href="/insights" key={item.name}><span><strong>{item.name}</strong><small>{item.pair} · N {formatNumber(item.n)} · 95% ДИ {ci95(item.resistance, item.n)}</small></span><b>{item.resistance}% R · {item.delta >= 0 ? "+" : ""}{item.delta} п.п.</b><ArrowRight size={15} /></Link>)}</div>
           </article>
         </section>
 

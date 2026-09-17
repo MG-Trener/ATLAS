@@ -27,6 +27,13 @@
 
   const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
   const hash=input=>{let h=2166136261;for(const ch of String(input)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return Math.abs(h>>>0)};
+  const proportionCi95=(positive,total)=>{
+    const n=Math.max(0,Number(total)||0),x=clamp(Number(positive)||0,0,n);
+    if(!n)return{low:0,high:0};
+    const z=1.959964,p=x/n,den=1+(z*z/n),centre=(p+(z*z/(2*n)))/den;
+    const margin=(z*Math.sqrt((p*(1-p)/n)+(z*z/(4*n*n))))/den;
+    return{low:Number((Math.max(0,centre-margin)*100).toFixed(1)),high:Number((Math.min(1,centre+margin)*100).toFixed(1))};
+  };
   const langIndex=lang=>lang==='kk'?1:lang==='en'?2:0;
   const regionName=(pcode,lang='ru')=>pcode&&regionNames[pcode]?regionNames[pcode][langIndex(lang)]:(lang==='kk'?'Қазақстан':lang==='en'?'Kazakhstan':'Казахстан');
   const drugName=(code,lang='ru')=>drugs[code]?.[langIndex(lang)]||code;
@@ -49,6 +56,8 @@
     const materialPenalty=material==='all'?1:.54;
     const periodPenalty=period==='2026'?1:(period.includes('12')?0.88:(period.includes('2024')?0.76:1));
     const n=Math.max(28,Math.round(sampleBase(pcode,organism)*materialPenalty*periodPenalty*(.72+(hash(`${drug}:n`)%40)/100)));
+    const resistantCount=Math.round(n*r/100);
+    const ci95=proportionCi95(resistantCount,n);
     const mdr=clamp((r*.31)+(hash(`${organism}:${pcode}:mdr`)%60)/10-2,1,48);
     const trend=years.map((year,index)=>{
       const distance=years.length-1-index;
@@ -63,14 +72,24 @@
     });
     const national=clamp(drugBase(organism,drug)+(materialFactors[material]||0),.3,88.5);
     const delta=Number((r-national).toFixed(1));
-    const sampleQuality=n<80?'low':n<200?'moderate':'good';
+    const publishable=n>=30;
+    const sampleQuality=!publishable?'suppressed':n<80?'low':n<200?'moderate':'good';
     return {
       pcode,organism,drug,material,period,
       region:regionNames[pcode]||['Казахстан','Қазақстан','Kazakhstan'],organismInfo:o,
-      resistance:Number(r.toFixed(1)),intermediate:Number(i.toFixed(1)),susceptible:Number(s.toFixed(1)),isolates:n,mdr:Number(mdr.toFixed(1)),
+      resistance:Number(r.toFixed(1)),intermediate:Number(i.toFixed(1)),susceptible:Number(s.toFixed(1)),isolates:n,tested:n,resistantCount,ci95,mdr:Number(mdr.toFixed(1)),
       trend:years.map((year,index)=>({year,value:trend[index]})),materials:materialRows,phenotypes:o.phenotypes,
-      national:Number(national.toFixed(1)),delta,sampleQuality,
-      demo:true
+      national:Number(national.toFixed(1)),delta,sampleQuality,publishable,
+      demo:true,
+      provenance:{
+        periodLabel:period==='2026'?'2026 YTD':period,
+        breakpointStandard:'EUCAST',
+        breakpointVersion:'2026 · demo mapping',
+        deduplicationRule:'first isolate / patient / organism / reporting period',
+        indicatorDefinition:'R / interpretable tested isolates',
+        confidenceInterval:'Wilson 95%',
+        mechanismEvidence:'phenotypic surveillance signal; molecular confirmation not implied'
+      }
     };
   }
 
@@ -92,5 +111,5 @@
   function drugOptions(organism='eco'){const o=organisms[organism]||organisms.eco;return Object.keys(o.drugs).map(code=>({code,names:drugs[code]||[code,code,code]}))}
   function materialOptions(){return Object.entries(materials).map(([code,names])=>({code,names}))}
 
-  window.AtlasDemoData={years,regionNames,organisms,drugs,materials,profile,layerValue,regionName,drugName,materialName,organismOptions,drugOptions,materialOptions,hash};
+  window.AtlasDemoData={years,regionNames,organisms,drugs,materials,profile,layerValue,regionName,drugName,materialName,organismOptions,drugOptions,materialOptions,proportionCi95,hash};
 })();
