@@ -124,7 +124,7 @@
     if(window[key]||document.querySelector(`script[data-atlas-script="${key}"]`))return;
     const s=document.createElement('script');s.src=src;s.dataset.atlasScript=key;s.onload=()=>{window[key]=true;};document.head.appendChild(s);
   }
-  function loadAdvanced(){injectScript('./advanced.js?v=20260917-1','__atlasAdvancedLoaded');injectScript('./mapping.js?v=20260916-2','__atlasMappingLoaded');injectScript('./map-mechanisms.js?v=20260917-1','__atlasMechanismMapLoaded');}
+  function loadAdvanced(){injectScript('./advanced.js?v=20260917-1','__atlasAdvancedLoaded');injectScript('./mapping.js?v=20260916-2','__atlasMappingLoaded');injectScript('./map-mechanisms.js?v=20260917-1','__atlasMechanismMapLoaded');injectScript('./surveillance-p0.js?v=20260917-1','__atlasSurveillanceP0Loaded');}
 
   if(!window.__atlasSectionsLoading){
     window.__atlasSectionsLoading=true;
