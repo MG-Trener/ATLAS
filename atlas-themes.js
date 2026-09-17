@@ -29,7 +29,7 @@
   function loadGlobalI18n(){
     if(!document.querySelector('link[data-atlas-global-i18n]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./atlas-global-i18n.css?v=20260916-1';style.dataset.atlasGlobalI18n='1';document.head.appendChild(style)}
     const loadExtensions=()=>{if(!window.__atlasI18nExtensions)loadScript('./atlas-i18n-extensions.js?v=20260916-4','i18n-extensions',()=>window.AtlasI18nExtensions?.apply?.())};
-    if(window.AtlasGlobalI18n){window.AtlasGlobalI18n.applyLanguage?.();loadExtensions()}else loadScript('./atlas-global-i18n.js?v=20260916-4','global-i18n',()=>{window.AtlasGlobalI18n?.applyLanguage?.();loadExtensions()});
+    if(window.AtlasGlobalI18n){window.AtlasGlobalI18n.applyLanguage?.();loadExtensions()}else loadScript('./atlas-global-i18n.js?v=20260917-1','global-i18n',()=>{window.AtlasGlobalI18n?.applyLanguage?.();loadExtensions()});
   }
   function loadPlatformStatus(){
     if(!document.querySelector('link[data-atlas-platform-status]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./platform-status.css?v=20260916-1';style.dataset.atlasPlatformStatus='1';document.head.appendChild(style)}
@@ -56,13 +56,13 @@
   }
   function loadRegionalAnalysis(){
     if(!pathConcept())return;
-    if(!document.querySelector('link[data-atlas-regional-analysis]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./regional-analysis.css?v=20260916-1';style.dataset.atlasRegionalAnalysis='1';document.head.appendChild(style)}
+    if(!document.querySelector('link[data-atlas-regional-analysis]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./regional-analysis.css?v=20260917-1';style.dataset.atlasRegionalAnalysis='1';document.head.appendChild(style)}
     const afterContext=()=>{
       const afterData=()=>{
-        const loadUnified=()=>{if(window.__atlasUnifiedAnalytics)return;loadScript('./unified-analytics.js?v=20260916-1','unified-analytics')};
-        if(window.__atlasRegionalAnalysis)loadUnified();else loadScript('./regional-analysis.js?v=20260916-1','regional-analysis',loadUnified);
+        const loadUnified=()=>{if(window.__atlasUnifiedAnalytics)return;loadScript('./unified-analytics.js?v=20260917-1','unified-analytics')};
+        if(window.__atlasRegionalAnalysis)loadUnified();else loadScript('./regional-analysis.js?v=20260917-1','regional-analysis',loadUnified);
       };
-      if(window.AtlasDemoData)afterData();else loadScript('./amr-demo-data.js?v=20260916-2','demo-data',afterData);
+      if(window.AtlasDemoData)afterData();else loadScript('./amr-demo-data.js?v=20260917-1','demo-data',afterData);
     };
     if(window.AtlasAnalysisContext)afterContext();else loadScript('./analysis-context.js?v=20260916-2','analysis-context',afterContext);
   }
