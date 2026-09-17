@@ -14,7 +14,6 @@ import {
   MapPinned,
   Microscope,
   ShieldCheck,
-  SlidersHorizontal,
   TestTube2,
   TrendingDown,
   TrendingUp,
@@ -139,7 +138,7 @@ export default function InsightsSuite() {
         <div className={styles.content}>
           <section className={styles.hero}>
             <div><span className={styles.eyebrow}>Национальная аналитическая витрина</span><h1>{title}</h1><p>{organism} · {antibiotic} · {material} · 2020–2026 YTD</p></div>
-            <div className={styles.heroActions}><button className={styles.secondary}><Layers3 size={15} /> Слои</button><button className={styles.primary}><SlidersHorizontal size={15} /> Сохранить вид</button></div>
+            <div className={styles.heroActions}><button className={styles.secondary}><Layers3 size={15} /> Слои</button></div>
           </section>
 
           <section className={styles.filters}>
