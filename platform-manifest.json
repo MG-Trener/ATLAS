@@ -2,7 +2,11 @@
   "platform": "AMR Atlas",
   "stage": "prototype",
   "official_statistics": false,
-  "languages": ["ru", "kk", "en"],
+  "languages": [
+    "ru",
+    "kk",
+    "en"
+  ],
   "geography": {
     "country": "KZ",
     "territories": 20,
@@ -28,7 +32,10 @@
         "code": "caesar_invasive",
         "label": "CAESAR",
         "purpose": "national_invasive_amr_surveillance",
-        "specimens": ["blood", "cerebrospinal_fluid"],
+        "specimens": [
+          "blood",
+          "cerebrospinal_fluid"
+        ],
         "priority_groups": 9,
         "deduplication_rule": "first_isolate_per_patient_organism_year",
         "status": "prototype"
@@ -37,7 +44,12 @@
         "code": "glass_routine",
         "label": "GLASS",
         "purpose": "extended_routine_amr_surveillance",
-        "specimens": ["blood", "urine", "stool", "urogenital"],
+        "specimens": [
+          "blood",
+          "urine",
+          "stool",
+          "urogenital"
+        ],
         "requires_demography": true,
         "requires_infection_origin": true,
         "status": "prototype"
@@ -50,13 +62,27 @@
       }
     ],
     "publication_policy": {
-      "show_percentage_min_n": 10,
+      "show_percentage_min_n": 30,
       "low_precision_warning_below_n": 30,
       "show_95ci": true,
       "require_breakpoint_version": true,
       "require_deduplication_version": true,
-      "require_quality_context": true
+      "require_quality_context": true,
+      "threshold_basis": "Project statistical precision policy, not a statutory de-identification threshold",
+      "suppress_numerators_below_min_n": true
     },
     "warning": "Prototype surveillance metrics are demonstration values and are not official statistics."
+  },
+  "public_explorer": {
+    "entry": "index.html",
+    "model": "atlas-model.mjs",
+    "model_version": "synthetic-aggregate-v1",
+    "data_mode": "synthetic_demo",
+    "cutoff": "2026-09-20",
+    "remote_requests": false,
+    "personal_data_upload": false,
+    "legal_review_date": "2026-09-20",
+    "legal_readiness": "prototype_only_not_certification",
+    "geometry_precision": "reference_boundaries_2024_not_cadastral"
   }
 }
