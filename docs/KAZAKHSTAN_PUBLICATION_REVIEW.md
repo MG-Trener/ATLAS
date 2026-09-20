@@ -34,3 +34,7 @@ No live database tables, policies or credentials were changed by this update.
 ## Visual QA
 
 `tests/responsive-preview.html` presents 390 px and 768 px frames for checking the public entry and a regional page. The normal entry contains no viewport overrides. Desktop and responsive browser checks should include country → region → home, filter changes, all three languages, sparse COL/blood samples, and Escape on the legal dialog.
+
+## Verification outcome
+
+`npm run verify` and the production export with two smoke tests passed locally and in GitHub Actions. Browser checks of the deployed homepage opened all 20 territory profiles (each with exactly one matching boundary), exercised Russian/Kazakh/English, organism-specific drug options, the sparse COL/blood cohort, and returning to the national map. Phone and tablet frames had no horizontal document overflow. The export action produced its aggregate CSV; the cloud browser did not expose a download event, so downloaded-file delivery was not asserted through that browser. CSV contents and suppression are verified independently by unit tests.

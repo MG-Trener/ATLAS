@@ -13,3 +13,8 @@ dialog{border:1px solid #e0eae5;border-radius:16px;padding:0;max-width:710px;wid
 @media(max-width:390px){.page-heading h1{font-size:24px}.map-heading{display:block}.map-switch{margin-top:10px}.site-header nav a,.site-header nav button{font-size:9px;padding:7px}.map-stage{height:240px;min-height:240px}.metric-label{font-size:9px}.metric>strong{font-size:27px}.brand b{font-size:20px}.language-switch button{min-width:29px}.legend{gap:8px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 @media print{.site-header nav,.language-switch,.export-button,.region-search,.zoom-controls,.site-footer>div:last-child,.map-switch,.back-link{display:none!important}body{background:white}.main{padding:0}.map-card{-webkit-print-color-adjust:exact;print-color-adjust:exact}.geography{break-inside:avoid}.card,.metric{break-inside:avoid}.region-sidebar{max-height:none}.region-list{overflow:visible}.region-row{padding:4px;min-height:0}.demo-notice{border:2px solid #b09453}.detail-grid{display:block}.card{margin-bottom:15px}.map-stage{height:350px;min-height:350px}}
+
+/* Keep map values readable at the initial fitted zoom. */
+#territory-shapes{filter:drop-shadow(0 2px 10px #62d8c421)}.map-labels.values{font-size:10px;font-weight:650}.map-labels.names{font-size:7px}.city-marker text{font-size:8px}.map-stage>svg{padding-top:12px;padding-bottom:8px}
+@media(min-width:901px){.map-stage{min-height:410px;height:430px}.region-sidebar{max-height:650px}}
+@media(max-width:680px){.map-labels.values{font-size:11px}.map-labels.names{font-size:8px}.city-marker text{font-size:9px}.map-stage>svg{padding-top:20px;padding-bottom:12px}}

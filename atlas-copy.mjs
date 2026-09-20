@@ -72,7 +72,7 @@ const strings = {
   precision:['При N < 30 доли, числители и доверительные интервалы не публикуются. Это правило проекта для малых выборок, не установленный законом порог.','N < 30 болса, үлестер, алымдар және сенім аралықтары жарияланбайды. Бұл заң талабы емес, шағын іріктемелерге арналған жоба ережесі.','For N < 30, proportions, numerators and confidence intervals are withheld. This is a project rule for small samples, not a statutory threshold.'],
   passport:['Паспорт данных','Деректер паспорты','Data provenance'],
   source:['Источник','Дереккөз','Source'],
-  sourceValue:['Синтетическая модель · clinical-наблюдений нет','Синтетикалық модель · клиникалық бақылаулар жоқ','Synthetic model · no clinical observations'],
+  sourceValue:['Синтетическая модель · клинических наблюдений нет','Синтетикалық модель · клиникалық бақылаулар жоқ','Synthetic model · no clinical observations'],
   indicator:['Расчёт','Есептеу','Calculation'],
   indicatorValue:['R / (S + I + R) × 100%; N = S + I + R','R / (S + I + R) × 100%; N = S + I + R','R / (S + I + R) × 100%; N = S + I + R'],
   version:['Версия модели','Модель нұсқасы','Model version'],
