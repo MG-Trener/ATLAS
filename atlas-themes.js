@@ -3,7 +3,7 @@
   const STORAGE_KEY='atlas-ui-concept';
   const LEGACY_KEY='atlas-ui-theme';
   const CONCEPTS=['clinical','atlas','command'];
-  const routes={clinical:'./index.html',atlas:'./national-atlas.html',command:'./command-center.html'};
+  const routes={clinical:'./clinical-preview.html',atlas:'./national-atlas.html',command:'./command-center.html'};
   const legacy={clinical:'clinical',research:'atlas',command:'command',dark:'command',teal:'clinical',sand:'atlas',contrast:'clinical'};
   const copy={
     ru:{button:'Концепция',title:'Модель интерфейса',hint:'Три самостоятельных способа работать с AMR Atlas',selected:'Открыта',items:{clinical:['Clinical Workspace','Рабочая медицинская панель'],atlas:['National AMR Atlas','Карта как главный интерфейс'],command:['Intelligence Center','Оперативный центр мониторинга']}},
@@ -12,7 +12,7 @@
   };
   const language=()=>{const v=localStorage.getItem('atlas-preview-language');return v==='kk'||v==='en'?v:'ru'};
   const t=()=>copy[language()]||copy.ru;
-  function pathConcept(){const p=location.pathname.toLowerCase();if(p.endsWith('/national-atlas.html'))return'atlas';if(p.endsWith('/command-center.html'))return'command';if(p.endsWith('/index.html')||p.endsWith('/atlas/')||p.endsWith('/atlas'))return'clinical';return null}
+  function pathConcept(){const p=location.pathname.toLowerCase();if(p.endsWith('/national-atlas.html'))return'atlas';if(p.endsWith('/command-center.html'))return'command';if(p.endsWith('/clinical-preview.html'))return'clinical';return null}
   function stored(){const direct=localStorage.getItem(STORAGE_KEY);if(CONCEPTS.includes(direct))return direct;const old=legacy[localStorage.getItem(LEGACY_KEY)];if(old){localStorage.setItem(STORAGE_KEY,old);localStorage.removeItem(LEGACY_KEY);return old}return'clinical'}
   function current(){return pathConcept()||stored()}
   function selectConcept(concept,navigate=true){if(!CONCEPTS.includes(concept))return;localStorage.setItem(STORAGE_KEY,concept);document.documentElement.dataset.atlasConcept=concept;document.dispatchEvent(new CustomEvent('atlas:concept-changed',{detail:{concept}}));if(navigate&&pathConcept()!==concept)location.href=routes[concept]}

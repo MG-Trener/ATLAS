@@ -22,9 +22,6 @@ jobs:
         with:
           node-version: 22
 
-      - name: Generate install lock for this run
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-
       - name: Install dependencies from lock
         run: npm ci --no-audit --no-fund
 
