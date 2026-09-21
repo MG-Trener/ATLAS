@@ -10,7 +10,7 @@
   function lang(){try{const v=localStorage.getItem('atlas-preview-language');return ['ru','kk','en'].includes(v)?v:'ru'}catch{return'ru'}}
   function currentPage(){const p=(location.pathname.split('/').pop()||'index.html').toLowerCase();return Object.entries(pages).find(([,file])=>file===p)?.[0]||'home'}
   function ensureStyle(selector,href,key){if(document.querySelector(selector))return;const l=document.createElement('link');l.rel='stylesheet';l.href=href;l.dataset[key]='1';document.head.appendChild(l)}
-  function loadCss(){ensureStyle('link[data-atlas-unified]','./atlas-unified.css?v=20260921-3','atlasUnified');ensureStyle('link[data-atlas-branding]','./assets/branding/branding.css?v=20260921-2','atlasBranding')}
+  function loadCss(){ensureStyle('link[data-atlas-unified]','./atlas-unified.css?v=20260921-3','atlasUnified');ensureStyle('link[data-atlas-branding]','./assets/branding/branding.css?v=20260921-2','atlasBranding');ensureStyle('link[data-atlas-polish]','./atlas-polish.css?v=20260921-1','atlasPolish')}
   function ensureFavicons(){
     const href='./assets/branding/favicon.png';
     let iconLink=document.querySelector('link[data-atlas-favicon]');
