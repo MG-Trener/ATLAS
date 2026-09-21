@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "source": "WHO Global Health Observatory / GLASS",
+    "checkedAt": null,
+    "generatedAt": "2026-09-21T00:00:00.000Z",
+    "version": "bootstrap-pending-first-verified-refresh",
+    "period": null,
+    "recordCount": 0,
+    "countryCount": 0,
+    "refreshEveryDays": 7,
+    "sourceUrls": {
+      "glass": "https://www.who.int/data/gho/data/themes/topics/topic-details/GHO/global-antimicrobial-resistance-surveillance-system-glass",
+      "api": "https://ghoapi.azureedge.net/api"
+    },
+    "limitations": [
+      "Bootstrap file is replaced only after the updater passes its WHO schema and volume checks.",
+      "If WHO is temporarily unavailable, the last verified snapshot remains published."
+    ]
+  },
+  "records": []
+}
