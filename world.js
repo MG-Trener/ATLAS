@@ -6,7 +6,7 @@ const CACHE_KEY='atlas-who-glass-live-v2';
 const WEEK=7*24*60*60*1000;
 const state={data:null,indicator:'mrsa',year:null,country:'KAZ',geo:null,search:''};
 const $=id=>document.getElementById(id);
-const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 const fmtDate=v=>v?new Date(v).toLocaleString('ru-RU',{dateStyle:'medium',timeStyle:'short'}):'—';
 const fmt=v=>Number(v).toLocaleString('ru-RU',{maximumFractionDigits:1});
 function timeoutFetch(url,ms=20000){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);return fetch(url,{signal:c.signal,cache:'no-store'}).finally(()=>clearTimeout(t));}
@@ -16,6 +16,7 @@ function normalizeName(s){return String(s||'').toLowerCase().replace(/–|—/g,
 function pickIndicators(rows){const english=rows.filter(r=>!r.Language||r.Language==='EN');const mrsa=english.find(r=>{const n=normalizeName(r.IndicatorName);return n.includes('methicillin-resistant')&&n.includes('staphylococcus aureus');});const ecoli=english.find(r=>{const n=normalizeName(r.IndicatorName);return n.includes('escherichia coli')&&n.includes('third-generation cephalospor');});if(!mrsa||!ecoli)throw new Error('WHO API: не найдены оба индикатора SDG 3.d.2');return{mrsa,ecoli};}
 function recordValue(r){const x=Number(r.NumericValue);if(Number.isFinite(x))return x;const m=String(r.Value||'').replace(',','.').match(/-?\d+(?:\.\d+)?/);return m?Number(m[0]):NaN;}
 function recordYear(r){const y=Number(r.TimeDim);if(Number.isInteger(y))return y;const m=String(r.TimeDimensionBegin||r.Date||'').match(/(20\d{2}|19\d{2})/);return m?Number(m[1]):NaN;}
+function optionalNumber(value){if(value===null||value===undefined||value==='')return null;const n=Number(value);return Number.isFinite(n)?n:null;}
 async function fetchWhoDataset(){
   const [catalog,countryRows]=await Promise.all([allPages(`${API}/Indicator`),allPages(`${API}/DIMENSION/COUNTRY/DimensionValues`)]);
   const found=pickIndicators(catalog);
@@ -23,7 +24,7 @@ async function fetchWhoDataset(){
   const defs=[['mrsa',found.mrsa],['ecoli3gc',found.ecoli]];
   const blocks=await Promise.all(defs.map(async([key,ind])=>[key,ind,await allPages(`${API}/${encodeURIComponent(ind.IndicatorCode)}`)]));
   const seen=new Map();
-  for(const [key,ind,rows] of blocks){for(const r of rows){if(r.Dim1!=null||r.Dim2!=null||r.Dim3!=null)continue;const code=r.SpatialDim,meta=countryMap.get(code);if(!meta)continue;const value=recordValue(r),year=recordYear(r);if(!Number.isFinite(value)||value<0||value>100||!Number.isInteger(year)||year<2015||year>2100)continue;const k=`${key}|${code}|${year}`;seen.set(k,{indicator:key,indicatorCode:ind.IndicatorCode,countryCode:code,country:meta.name,whoRegion:meta.region,year,value:+value.toFixed(4),low:Number.isFinite(Number(r.Low))?Number(r.Low):null,high:Number.isFinite(Number(r.High))?Number(r.High):null});}}
+  for(const [key,ind,rows] of blocks){for(const r of rows){if(r.Dim1!=null||r.Dim2!=null||r.Dim3!=null)continue;const code=r.SpatialDim,meta=countryMap.get(code);if(!meta)continue;const value=recordValue(r),year=recordYear(r);if(!Number.isFinite(value)||value<0||value>100||!Number.isInteger(year)||year<2015||year>2100)continue;const k=`${key}|${code}|${year}`;seen.set(k,{indicator:key,indicatorCode:ind.IndicatorCode,countryCode:code,country:meta.name,whoRegion:meta.region,year,value:+value.toFixed(4),low:optionalNumber(r.Low),high:optionalNumber(r.High)});}}
   const records=[...seen.values()].sort((a,b)=>a.indicator.localeCompare(b.indicator)||a.country.localeCompare(b.country)||a.year-b.year);
   const countries=new Set(records.map(r=>r.countryCode)),years=records.map(r=>r.year);
   if(records.length<500||countries.size<50)throw new Error(`WHO API: подозрительно малый набор (${records.length} записей, ${countries.size} стран)`);
