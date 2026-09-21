@@ -43,7 +43,7 @@ async function fetchText(url, attempt = 1) {
   try {
     const response = await fetch(url, {
       signal: controller.signal,
-      headers: { accept: 'text/csv,application/json;q=0.8', 'user-agent': 'AMR-Atlas/2.0' }
+      headers: { accept: 'text/csv,application/json;q=0.8', 'user-agent': 'AMR-Atlas/2.1' }
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return await response.text();
@@ -62,7 +62,7 @@ function buildUrl() {
   const url = new URL(`${API_BASE}/DATA_/${TABLE}`);
   url.searchParams.set('$filter', `IND_GRP_CODE eq '${GROUP}'`);
   url.searchParams.set('$select', [
-    'IND_CODE', 'DIM_TIME', 'DIM_GEO_CODE_ISO3', 'DIM_GEO_CODE_M49',
+    'IND_CODE', 'DIM_TIME', 'DIM_GEO_CODE_ISO3',
     'DIM_MEMBER_1_CODE', 'DIM_MEMBER_2_CODE', 'DIM_MEMBER_3_CODE',
     'VALUE_NUMERIC', 'VALUE_LABEL'
   ].join(','));
@@ -96,7 +96,6 @@ for (const row of rawRows) {
   if (!pivot.has(key)) {
     pivot.set(key, {
       countryCode: iso3,
-      m49: numberOrNull(row.DIM_GEO_CODE_M49),
       year,
       infection: infection || 'All specimens',
       pathogen,
@@ -130,14 +129,30 @@ if (records.length < MIN_RECORDS || countries.size < MIN_COUNTRIES) {
   throw new Error(`WHO GLASS quality gate failed: ${records.length} records / ${countries.size} countries`);
 }
 
+const infectionIndex = new Map(infections.map((value, index) => [value, index]));
+const pathogenIndex = new Map(pathogens.map((value, index) => [value, index]));
+const antibioticIndex = new Map(antibiotics.map((value, index) => [value, index]));
+const compactRecords = records.map(r => [
+  r.countryCode,
+  r.year,
+  infectionIndex.get(r.infection),
+  pathogenIndex.get(r.pathogen),
+  antibioticIndex.get(r.antibiotic),
+  r.percentResistant,
+  r.resistant,
+  r.interpretableAST,
+  r.totalSpecimenIsolates
+]);
+
 const minYear = Math.min(...years);
 const maxYear = Math.max(...years);
-const stable = JSON.stringify(records);
+const stable = JSON.stringify(compactRecords);
 const sha256 = crypto.createHash('sha256').update(stable).digest('hex');
 const now = new Date().toISOString();
 const dataset = {
   meta: {
-    schemaVersion: '2.0',
+    schemaVersion: '2.1',
+    recordEncoding: ['countryCode','year','infectionIndex','pathogenIndex','antibioticIndex','percentResistant','resistant','interpretableAST','totalSpecimenIsolates'],
     source: 'WHO GLASS Data Visualization Dashboard / XMART API',
     sourceTable: TABLE,
     sourceGroup: GROUP,
@@ -169,9 +184,9 @@ const dataset = {
     ]
   },
   dimensions: { infections, pathogens, antibiotics },
-  records
+  records: compactRecords
 };
 
 await fs.mkdir('data', { recursive: true });
-await fs.writeFile(OUT, JSON.stringify(dataset, null, 2) + '\n', 'utf8');
-console.log(`WHO GLASS snapshot written: ${dataset.meta.version}; ${records.length} combinations; ${countries.size} countries; ${minYear}-${maxYear}; USA=${dataset.meta.usaAvailable}`);
+await fs.writeFile(OUT, JSON.stringify(dataset) + '\n', 'utf8');
+console.log(`WHO GLASS compact snapshot written: ${dataset.meta.version}; ${records.length} combinations; ${countries.size} countries; ${minYear}-${maxYear}; USA=${dataset.meta.usaAvailable}`);
