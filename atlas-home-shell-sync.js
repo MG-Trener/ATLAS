@@ -7,9 +7,9 @@
   if(!root)return;
 
   const labels={
-    ru:{home:'Казахстан',world:'Мир / WHO GLASS',reference:'Справочник',mechanisms:'Механизмы',glossary:'Словарь AMR',methodology:'Методология'},
-    kk:{home:'Қазақстан',world:'Әлем / WHO GLASS',reference:'Анықтамалық',mechanisms:'Механизмдер',glossary:'AMR сөздігі',methodology:'Әдістеме'},
-    en:{home:'Kazakhstan',world:'World / WHO GLASS',reference:'Reference',mechanisms:'Mechanisms',glossary:'AMR glossary',methodology:'Methodology'}
+    ru:{home:'Казахстан',world:'Мир / WHO GLASS',reference:'Справочник',mechanisms:'Механизмы',glossary:'Словарь AMR',methodology:'Методология',tagline:'Антимикробная резистентность'},
+    kk:{home:'Қазақстан',world:'Әлем / WHO GLASS',reference:'Анықтамалық',mechanisms:'Механизмдер',glossary:'AMR сөздігі',methodology:'Әдістеме',tagline:'Антимикробтық резистенттілік'},
+    en:{home:'Kazakhstan',world:'World / WHO GLASS',reference:'Reference',mechanisms:'Mechanisms',glossary:'AMR glossary',methodology:'Methodology',tagline:'Antimicrobial resistance'}
   };
 
   const icon=name=>`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${({
@@ -31,15 +31,15 @@
   function unifiedHeader(){
     const lang=language();
     const l=labels[lang]||labels.ru;
-    return `<a class="brand" href="./index.html" data-home data-atlas-brand="20260921-5"><img class="brand-symbol" src="./assets/branding/logo.png" alt=""><img class="brand-wordmark" src="./assets/branding/logo-wordmark.png" alt="AMR Atlas — антибиотикорезистентность Казахстана и мира"></a><nav aria-label="AMR Atlas" data-home-shell-nav="1"><a class="active" href="./index.html" data-home>${icon('home')}<span>${l.home}</span></a><a href="./world.html">${icon('world')}<span>${l.world}</span></a><a href="./reference.html">${icon('reference')}<span>${l.reference}</span></a><a href="./mechanisms.html">${icon('mechanisms')}<span>${l.mechanisms}</span></a><a href="./glossary.html">${icon('glossary')}<span>${l.glossary}</span></a><button type="button" data-info>${icon('methodology')}<span>${l.methodology}</span></button></nav><div class="language-switch" role="group" aria-label="Language / Тіл / Язык">${[['ru','RU'],['kk','ҚАЗ'],['en','EN']].map(([code,label])=>`<button type="button" data-language="${code}" lang="${code}" aria-pressed="${lang===code}">${label}</button>`).join('')}</div>`;
+    return `<a class="brand" href="./index.html" data-home data-atlas-brand="20260921-6"><img class="brand-symbol" src="./assets/branding/logo.png" width="48" height="48" decoding="async" fetchpriority="low" alt=""><span class="brand-copy"><b>AMR <span>Atlas</span></b><small>${l.tagline}</small></span></a><nav aria-label="AMR Atlas" data-home-shell-nav="1"><a class="active" href="./index.html" data-home>${icon('home')}<span>${l.home}</span></a><a href="./world.html">${icon('world')}<span>${l.world}</span></a><a href="./reference.html">${icon('reference')}<span>${l.reference}</span></a><a href="./mechanisms.html">${icon('mechanisms')}<span>${l.mechanisms}</span></a><a href="./glossary.html">${icon('glossary')}<span>${l.glossary}</span></a><button type="button" data-info>${icon('methodology')}<span>${l.methodology}</span></button></nav><div class="language-switch" role="group" aria-label="Language / Тіл / Язык">${[['ru','RU'],['kk','ҚАЗ'],['en','EN']].map(([code,label])=>`<button type="button" data-language="${code}" lang="${code}" aria-pressed="${lang===code}">${label}</button>`).join('')}</div>`;
   }
 
   function sync(){
     const header=root.querySelector('.site-header');
     if(!header)return;
-    if(header.dataset.atlasHomeShell==='20260921-5')return;
+    if(header.dataset.atlasHomeShell==='20260921-6')return;
     header.innerHTML=unifiedHeader();
-    header.dataset.atlasHomeShell='20260921-5';
+    header.dataset.atlasHomeShell='20260921-6';
     header.dataset.atlasUnifiedHeader='1';
   }
 
