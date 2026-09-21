@@ -24,8 +24,15 @@ function trend(code){return baseRecords().filter(r=>r.countryCode===code).sort((
 function unique(values){return [...new Set(values)].sort((a,b)=>String(a).localeCompare(String(b),'ru'));}
 function chooseBestDefaults(){
   const counts=new Map();
-  for(const r of state.data.records){const key=[r.infection,r.pathogen,r.antibiotic].join('\u0001');if(!counts.has(key))counts.set(key,new Set());counts.get(key).add(r.countryCode);}
-  const best=[...counts.entries()].sort((a,b)=>b[1].size-a[1].size)[0]?.[0]?.split('\u0001');
+  for(const r of state.data.records){
+    const key=[r.infection,r.pathogen,r.antibiotic].join('\u0001');
+    if(!counts.has(key))counts.set(key,new Set());
+    counts.get(key).add(r.countryCode);
+  }
+  const entries=[...counts.entries()];
+  const withUsa=entries.filter(([,countries])=>countries.has('USA'));
+  const pool=withUsa.length?withUsa:entries;
+  const best=pool.sort((a,b)=>b[1].size-a[1].size)[0]?.[0]?.split('\u0001');
   if(best){[state.infection,state.pathogen,state.antibiotic]=best;}
 }
 function option(v,label,current){return`<option value="${safe(v)}" ${v===current?'selected':''}>${safe(label)}</option>`;}
