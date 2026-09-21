@@ -9,7 +9,7 @@ const requiredShared = [
   'atlas-themes.js','atlas-global-i18n.js','atlas-i18n-extensions.js','atlas-global-i18n.css',
   'platform-status.js','platform-status.css','platform-manifest.json','regions-loader.js','regions.json','atlas-readable-type.css',
   'analysis-context.js','amr-demo-data.js','regional-analysis.js','unified-analytics.js','whonet-quality.css',
-  'surveillance-p0.js','surveillance-p0.css','atlas-sections.js','atlas-sections.css','world.js','world.css','glossary.js','glossary-light.css','data/who-glass.json'
+  'surveillance-p0.js','surveillance-p0.css','atlas-sections-nav.js','atlas-sections.css','world.js','world.css','glossary.js','glossary-light.css','data/who-glass.json'
 ];
 const failures = [];
 const warnings = [];
