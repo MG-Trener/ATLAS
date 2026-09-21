@@ -3,13 +3,13 @@ import { extname, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const root = process.cwd();
-const requiredPages = ['index.html','national-atlas.html','command-center.html','reference.html','mechanisms.html','clinical-preview.html'];
+const requiredPages = ['index.html','national-atlas.html','command-center.html','reference.html','mechanisms.html','clinical-preview.html','world.html','glossary.html'];
 const requiredShared = [
   'atlas-model.mjs','atlas-copy.mjs','atlas-explorer.mjs','atlas-explorer.css','atlas-mark.svg',
   'atlas-themes.js','atlas-global-i18n.js','atlas-i18n-extensions.js','atlas-global-i18n.css',
   'platform-status.js','platform-status.css','platform-manifest.json','regions-loader.js','regions.json','atlas-readable-type.css',
   'analysis-context.js','amr-demo-data.js','regional-analysis.js','unified-analytics.js','whonet-quality.css',
-  'surveillance-p0.js','surveillance-p0.css'
+  'surveillance-p0.js','surveillance-p0.css','atlas-sections-nav.js','atlas-sections.css','world.js','world.css','glossary.js','glossary-light.css','data/who-glass.json'
 ];
 const failures = [];
 const warnings = [];
@@ -37,8 +37,10 @@ function localRefs(html){
 for (const page of requiredPages) {
   if (!existsSync(file(page))) continue;
   const html=readFileSync(file(page),'utf8');
-  if (page!=='index.html' && !/atlas-themes\.js/.test(html)) fail(`${page}: atlas-themes.js loader is missing`);
-  if (!/(RU|data-lang=["']ru["'])/.test(html)) warn(`${page}: no visible RU language control found in static HTML`);
+  const standaloneSections=new Set(['world.html','glossary.html']);
+  if (page!=='index.html' && !standaloneSections.has(page) && !/atlas-themes\.js/.test(html)) fail(`${page}: atlas-themes.js loader is missing`);
+  if (standaloneSections.has(page) && !/atlas-sections\.css\?v=/.test(html)) fail(`${page}: atlas-sections.css must be cache-busted`);
+  if (!/(RU|data-lang=["']ru["']|lang=["']ru["'])/.test(html)) warn(`${page}: no visible RU language marker found in static HTML`);
   for (const ref of localRefs(html)) {
     if (!existsSync(file(ref))) fail(`${page}: broken local reference -> ${ref}`);
   }
@@ -62,6 +64,15 @@ if (existsSync(file('index.html'))) {
   for (const asset of ['atlas-explorer.mjs','atlas-explorer.css']) {
     if (!new RegExp(`${asset.replace('.', '\\.')}\\?v=`).test(indexHtml)) fail(`index.html: ${asset} must be cache-busted`);
   }
+}
+
+if (existsSync(file('world.html'))) {
+  const world=readFileSync(file('world.html'),'utf8');
+  for (const asset of ['world.js','world.css']) if (!new RegExp(`${asset.replace('.', '\\.')}\\?v=`).test(world)) fail(`world.html: ${asset} must be cache-busted`);
+}
+if (existsSync(file('glossary.html'))) {
+  const glossary=readFileSync(file('glossary.html'),'utf8');
+  for (const asset of ['glossary.js','glossary-light.css']) if (!new RegExp(`${asset.replace('.', '\\.')}\\?v=`).test(glossary)) fail(`glossary.html: ${asset} must be cache-busted`);
 }
 
 if (existsSync(file('dashboard.js'))) {
@@ -90,7 +101,7 @@ if (existsSync(file('platform-manifest.json'))) {
 
     const policy=manifest.surveillance?.publication_policy||{};
     if (!(Number(policy.show_percentage_min_n)>0)) fail('platform-manifest.json: publication_policy.show_percentage_min_n must be > 0');
-    if (!(Number(policy.low_precision_warning_below_n)>=Number(policy.show_percentage_min_n))) fail('platform-manifest.json: low_precision_warning_below_n must be at least show_percentage_min_n');
+    if (!(Number(policy.low_precision_warning_below_n)>=Number(policy.show_percentage_min_n))) fail('platform-manifest.json: publication_policy.low_precision_warning_below_n must be at least show_percentage_min_n');
     for (const key of ['show_95ci','require_breakpoint_version','require_deduplication_version','require_quality_context']) {
       if (policy[key]!==true) fail(`platform-manifest.json: publication_policy.${key} must be true for the prototype contract`);
     }
