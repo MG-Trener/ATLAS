@@ -1,35 +1,177 @@
 import fs from 'node:fs/promises';
 import crypto from 'node:crypto';
 
-const API=process.env.WHO_GHO_API||'https://ghoapi.azureedge.net/api';
-const OUT='data/who-glass.json';
-const MIN_RECORDS=500,MIN_COUNTRIES=50;
+const API_BASE = process.env.WHO_XMART_API || 'https://xmart-api-public.who.int';
+const OUT = 'data/who-glass.json';
+const TABLE = 'RELAY_GLASS_AMR';
+const GROUP = 'AMR_RESISTANCE_ANTIBIOTIC_BOX';
+const MIN_RECORDS = 1500;
+const MIN_COUNTRIES = 80;
+const INDICATORS = {
+  RESISTANCE_ANTI_BOX_PERCENTRESISTANT: 'percentResistant',
+  RESISTANCE_ANTI_BOX_RESISTANT: 'resistant',
+  RESISTANCE_ANTI_BOX_INTERPRETABLEAST: 'interpretableAST',
+  RESISTANCE_ANTI_BOX_TOTALSPECIMENISOLATES: 'totalSpecimenIsolates'
+};
 
-async function fetchJson(url,attempt=1){
-  const c=new AbortController();const timer=setTimeout(()=>c.abort(),30000);
-  try{const r=await fetch(url,{signal:c.signal,headers:{accept:'application/json','user-agent':'AMR-Atlas/1.0'}});if(!r.ok)throw new Error(`HTTP ${r.status}`);return await r.json();}
-  catch(e){if(attempt<3){await new Promise(r=>setTimeout(r,1000*attempt));return fetchJson(url,attempt+1);}throw new Error(`WHO fetch failed: ${url}: ${e.message}`);}
-  finally{clearTimeout(timer);}
+function parseCsv(text) {
+  const rows = [];
+  let row = [], cell = '', quoted = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (ch === '"') {
+      if (quoted && text[i + 1] === '"') { cell += '"'; i += 1; }
+      else quoted = !quoted;
+    } else if (ch === ',' && !quoted) {
+      row.push(cell); cell = '';
+    } else if ((ch === '\n' || ch === '\r') && !quoted) {
+      if (ch === '\r' && text[i + 1] === '\n') i += 1;
+      row.push(cell); cell = '';
+      if (row.some(v => v !== '')) rows.push(row);
+      row = [];
+    } else cell += ch;
+  }
+  row.push(cell);
+  if (row.some(v => v !== '')) rows.push(row);
+  const headers = (rows.shift() || []).map(v => v.replace(/^\uFEFF/, '').trim());
+  return rows.map(values => Object.fromEntries(headers.map((h, i) => [h, values[i] ?? ''])));
 }
-async function allPages(url){const out=[];let next=url,guard=0;while(next&&guard<100){const b=await fetchJson(next);if(!Array.isArray(b.value))throw new Error(`Unexpected WHO schema at ${next}`);out.push(...b.value);next=b['@odata.nextLink']||b['odata.nextLink']||null;guard++;}return out;}
-const norm=s=>String(s||'').toLowerCase().replace(/–|—/g,'-').replace(/\s+/g,' ');
-function pickIndicators(rows){const en=rows.filter(r=>!r.Language||r.Language==='EN');const mrsa=en.find(r=>{const n=norm(r.IndicatorName);return n.includes('methicillin-resistant')&&n.includes('staphylococcus aureus');});const ecoli=en.find(r=>{const n=norm(r.IndicatorName);return n.includes('escherichia coli')&&n.includes('third-generation cephalospor');});if(!mrsa||!ecoli)throw new Error('WHO SDG 3.d.2 indicators not found');return{mrsa,ecoli};}
-function num(r){const n=Number(r.NumericValue);if(Number.isFinite(n))return n;const m=String(r.Value||'').replace(',','.').match(/-?\d+(?:\.\d+)?/);return m?Number(m[0]):NaN;}
-function year(r){const y=Number(r.TimeDim);if(Number.isInteger(y))return y;const m=String(r.TimeDimensionBegin||r.Date||'').match(/(20\d{2}|19\d{2})/);return m?Number(m[1]):NaN;}
-function optionalNumber(value){if(value===null||value===undefined||value==='')return null;const n=Number(value);return Number.isFinite(n)?n:null;}
 
-const [catalog,countries]=await Promise.all([allPages(`${API}/Indicator`),allPages(`${API}/DIMENSION/COUNTRY/DimensionValues`)]);
-const found=pickIndicators(catalog);
-const countryMap=new Map(countries.map(c=>[c.Code,{name:c.Title||c.Code,region:c.ParentTitle||''}]));
-const defs=[['mrsa',found.mrsa],['ecoli3gc',found.ecoli]];
-const blocks=await Promise.all(defs.map(async([key,ind])=>[key,ind,await allPages(`${API}/${encodeURIComponent(ind.IndicatorCode)}`)]));
-const dedupe=new Map();
-for(const [key,ind,rows] of blocks){for(const r of rows){if(r.Dim1!=null||r.Dim2!=null||r.Dim3!=null)continue;const meta=countryMap.get(r.SpatialDim);if(!meta)continue;const value=num(r),y=year(r);if(!Number.isFinite(value)||value<0||value>100||!Number.isInteger(y)||y<2015||y>2100)continue;const k=`${key}|${r.SpatialDim}|${y}`;if(dedupe.has(k))throw new Error(`Duplicate WHO record: ${k}`);dedupe.set(k,{indicator:key,indicatorCode:ind.IndicatorCode,countryCode:r.SpatialDim,country:meta.name,whoRegion:meta.region,year:y,value:+value.toFixed(4),low:optionalNumber(r.Low),high:optionalNumber(r.High)});}}
-const records=[...dedupe.values()].sort((a,b)=>a.indicator.localeCompare(b.indicator)||a.country.localeCompare(b.country)||a.year-b.year);
-const countrySet=new Set(records.map(r=>r.countryCode));const years=records.map(r=>r.year);
-if(records.length<MIN_RECORDS||countrySet.size<MIN_COUNTRIES)throw new Error(`Quality gate failed: ${records.length} records, ${countrySet.size} countries`);
-const minYear=Math.min(...years),maxYear=Math.max(...years),stable=JSON.stringify(records);
-const hash=crypto.createHash('sha256').update(stable).digest('hex').slice(0,12),now=new Date().toISOString();
-const dataset={meta:{source:'WHO Global Health Observatory / GLASS',checkedAt:now,generatedAt:now,version:`glass-${maxYear}-${hash}`,contentSha256:crypto.createHash('sha256').update(stable).digest('hex'),period:{from:minYear,to:maxYear},recordCount:records.length,countryCount:countrySet.size,refreshEveryDays:7,indicators:{mrsa:{code:found.mrsa.IndicatorCode,name:found.mrsa.IndicatorName},ecoli3gc:{code:found.ecoli.IndicatorCode,name:found.ecoli.IndicatorName}},sourceUrls:{glass:'https://www.who.int/data/gho/data/themes/topics/topic-details/GHO/global-antimicrobial-resistance-surveillance-system-glass',api:API},limitations:['Public indicator feed may not expose denominator/sample size for each row.','Absence of a country-year value means no published value in this feed, not absence of AMR.','National representativeness depends on country surveillance coverage and reporting.']},records};
-await fs.mkdir('data',{recursive:true});await fs.writeFile(OUT,JSON.stringify(dataset,null,2)+'\n','utf8');
-console.log(`WHO GLASS snapshot written: ${dataset.meta.version}; ${records.length} records; ${countrySet.size} countries; ${minYear}-${maxYear}`);
+async function fetchText(url, attempt = 1) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 90000);
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { accept: 'text/csv,application/json;q=0.8', 'user-agent': 'AMR-Atlas/2.0' }
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.text();
+  } catch (error) {
+    if (attempt < 3) {
+      await new Promise(resolve => setTimeout(resolve, attempt * 1500));
+      return fetchText(url, attempt + 1);
+    }
+    throw new Error(`WHO XMART fetch failed after ${attempt} attempts: ${error.message}`);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function buildUrl() {
+  const url = new URL(`${API_BASE}/DATA_/${TABLE}`);
+  url.searchParams.set('$filter', `IND_GRP_CODE eq '${GROUP}'`);
+  url.searchParams.set('$select', [
+    'IND_CODE', 'DIM_TIME', 'DIM_GEO_CODE_ISO3', 'DIM_GEO_CODE_M49',
+    'DIM_MEMBER_1_CODE', 'DIM_MEMBER_2_CODE', 'DIM_MEMBER_3_CODE',
+    'VALUE_NUMERIC', 'VALUE_LABEL'
+  ].join(','));
+  url.searchParams.set('$format', 'csv');
+  return url.toString();
+}
+
+function numberOrNull(value) {
+  if (value === null || value === undefined || String(value).trim() === '') return null;
+  const n = Number(String(value).replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
+}
+
+const sourceUrl = buildUrl();
+const csv = await fetchText(sourceUrl);
+if (!csv.trim() || !csv.includes('IND_CODE')) throw new Error('WHO XMART returned an empty or unexpected CSV response');
+const rawRows = parseCsv(csv);
+if (!rawRows.length) throw new Error('WHO XMART CSV contains no data rows');
+
+const pivot = new Map();
+for (const row of rawRows) {
+  const iso3 = String(row.DIM_GEO_CODE_ISO3 || '').trim().toUpperCase();
+  const year = Number(row.DIM_TIME);
+  const infection = String(row.DIM_MEMBER_1_CODE || '').trim();
+  const pathogen = String(row.DIM_MEMBER_2_CODE || '').trim();
+  const antibiotic = String(row.DIM_MEMBER_3_CODE || '').trim();
+  const indicator = INDICATORS[String(row.IND_CODE || '').trim()];
+  const label = String(row.VALUE_LABEL || '').trim();
+  if (!indicator || label || !/^[A-Z]{3}$/.test(iso3) || !Number.isInteger(year) || year < 2016 || year > 2100 || !pathogen || !antibiotic) continue;
+  const key = [iso3, year, infection || 'ALL', pathogen, antibiotic].join('|');
+  if (!pivot.has(key)) {
+    pivot.set(key, {
+      countryCode: iso3,
+      m49: numberOrNull(row.DIM_GEO_CODE_M49),
+      year,
+      infection: infection || 'All specimens',
+      pathogen,
+      antibiotic,
+      percentResistant: null,
+      resistant: null,
+      interpretableAST: null,
+      totalSpecimenIsolates: null
+    });
+  }
+  pivot.get(key)[indicator] = numberOrNull(row.VALUE_NUMERIC);
+}
+
+const records = [...pivot.values()]
+  .filter(r => Number.isFinite(r.percentResistant) && r.percentResistant >= 0 && r.percentResistant <= 100)
+  .map(r => ({
+    ...r,
+    percentResistant: +r.percentResistant.toFixed(4),
+    resistant: Number.isFinite(r.resistant) ? Math.round(r.resistant) : null,
+    interpretableAST: Number.isFinite(r.interpretableAST) ? Math.round(r.interpretableAST) : null,
+    totalSpecimenIsolates: Number.isFinite(r.totalSpecimenIsolates) ? Math.round(r.totalSpecimenIsolates) : null
+  }))
+  .sort((a, b) => a.countryCode.localeCompare(b.countryCode) || a.year - b.year || a.infection.localeCompare(b.infection) || a.pathogen.localeCompare(b.pathogen) || a.antibiotic.localeCompare(b.antibiotic));
+
+const countries = new Set(records.map(r => r.countryCode));
+const years = records.map(r => r.year);
+const infections = [...new Set(records.map(r => r.infection))].sort();
+const pathogens = [...new Set(records.map(r => r.pathogen))].sort();
+const antibiotics = [...new Set(records.map(r => r.antibiotic))].sort();
+if (records.length < MIN_RECORDS || countries.size < MIN_COUNTRIES) {
+  throw new Error(`WHO GLASS quality gate failed: ${records.length} records / ${countries.size} countries`);
+}
+
+const minYear = Math.min(...years);
+const maxYear = Math.max(...years);
+const stable = JSON.stringify(records);
+const sha256 = crypto.createHash('sha256').update(stable).digest('hex');
+const now = new Date().toISOString();
+const dataset = {
+  meta: {
+    schemaVersion: '2.0',
+    source: 'WHO GLASS Data Visualization Dashboard / XMART API',
+    sourceTable: TABLE,
+    sourceGroup: GROUP,
+    checkedAt: now,
+    generatedAt: now,
+    version: `glass-amr-${maxYear}-${sha256.slice(0, 12)}`,
+    contentSha256: sha256,
+    period: { from: minYear, to: maxYear },
+    latestAvailableYear: maxYear,
+    recordCount: records.length,
+    countryCount: countries.size,
+    infectionCount: infections.length,
+    pathogenCount: pathogens.length,
+    antibioticCount: antibiotics.length,
+    refreshEveryDays: 7,
+    usaAvailable: countries.has('USA'),
+    sourceUrls: {
+      dashboard: 'https://worldhealthorg.shinyapps.io/glass-dashboard/',
+      portal: 'https://data.who.int/dashboards/amr',
+      glass: 'https://www.who.int/initiatives/glass',
+      api: API_BASE,
+      dashboardCode: 'https://github.com/WorldHealthOrganization/GLASS-Dashboard'
+    },
+    notes: [
+      'The map covers the whole world; coloured countries are those with a published GLASS value for the selected combination.',
+      'Latest available mode uses the newest published year separately for each country and selected pathogen-antibiotic combination.',
+      'Absence of a value means no published GLASS value for the selected combination, not absence of antimicrobial resistance.',
+      'WHO reports GLASS dashboard data for 2016-2023; actual availability varies by country, specimen/infection context, pathogen and antibiotic.'
+    ]
+  },
+  dimensions: { infections, pathogens, antibiotics },
+  records
+};
+
+await fs.mkdir('data', { recursive: true });
+await fs.writeFile(OUT, JSON.stringify(dataset, null, 2) + '\n', 'utf8');
+console.log(`WHO GLASS snapshot written: ${dataset.meta.version}; ${records.length} combinations; ${countries.size} countries; ${minYear}-${maxYear}; USA=${dataset.meta.usaAvailable}`);
