@@ -16,6 +16,7 @@ const norm=s=>String(s||'').toLowerCase().replace(/–|—/g,'-').replace(/\s+/g
 function pickIndicators(rows){const en=rows.filter(r=>!r.Language||r.Language==='EN');const mrsa=en.find(r=>{const n=norm(r.IndicatorName);return n.includes('methicillin-resistant')&&n.includes('staphylococcus aureus');});const ecoli=en.find(r=>{const n=norm(r.IndicatorName);return n.includes('escherichia coli')&&n.includes('third-generation cephalospor');});if(!mrsa||!ecoli)throw new Error('WHO SDG 3.d.2 indicators not found');return{mrsa,ecoli};}
 function num(r){const n=Number(r.NumericValue);if(Number.isFinite(n))return n;const m=String(r.Value||'').replace(',','.').match(/-?\d+(?:\.\d+)?/);return m?Number(m[0]):NaN;}
 function year(r){const y=Number(r.TimeDim);if(Number.isInteger(y))return y;const m=String(r.TimeDimensionBegin||r.Date||'').match(/(20\d{2}|19\d{2})/);return m?Number(m[1]):NaN;}
+function optionalNumber(value){if(value===null||value===undefined||value==='')return null;const n=Number(value);return Number.isFinite(n)?n:null;}
 
 const [catalog,countries]=await Promise.all([allPages(`${API}/Indicator`),allPages(`${API}/DIMENSION/COUNTRY/DimensionValues`)]);
 const found=pickIndicators(catalog);
@@ -23,7 +24,7 @@ const countryMap=new Map(countries.map(c=>[c.Code,{name:c.Title||c.Code,region:c
 const defs=[['mrsa',found.mrsa],['ecoli3gc',found.ecoli]];
 const blocks=await Promise.all(defs.map(async([key,ind])=>[key,ind,await allPages(`${API}/${encodeURIComponent(ind.IndicatorCode)}`)]));
 const dedupe=new Map();
-for(const [key,ind,rows] of blocks){for(const r of rows){if(r.Dim1!=null||r.Dim2!=null||r.Dim3!=null)continue;const meta=countryMap.get(r.SpatialDim);if(!meta)continue;const value=num(r),y=year(r);if(!Number.isFinite(value)||value<0||value>100||!Number.isInteger(y)||y<2015||y>2100)continue;const k=`${key}|${r.SpatialDim}|${y}`;if(dedupe.has(k))throw new Error(`Duplicate WHO record: ${k}`);dedupe.set(k,{indicator:key,indicatorCode:ind.IndicatorCode,countryCode:r.SpatialDim,country:meta.name,whoRegion:meta.region,year:y,value:+value.toFixed(4),low:Number.isFinite(Number(r.Low))?Number(r.Low):null,high:Number.isFinite(Number(r.High))?Number(r.High):null});}}
+for(const [key,ind,rows] of blocks){for(const r of rows){if(r.Dim1!=null||r.Dim2!=null||r.Dim3!=null)continue;const meta=countryMap.get(r.SpatialDim);if(!meta)continue;const value=num(r),y=year(r);if(!Number.isFinite(value)||value<0||value>100||!Number.isInteger(y)||y<2015||y>2100)continue;const k=`${key}|${r.SpatialDim}|${y}`;if(dedupe.has(k))throw new Error(`Duplicate WHO record: ${k}`);dedupe.set(k,{indicator:key,indicatorCode:ind.IndicatorCode,countryCode:r.SpatialDim,country:meta.name,whoRegion:meta.region,year:y,value:+value.toFixed(4),low:optionalNumber(r.Low),high:optionalNumber(r.High)});}}
 const records=[...dedupe.values()].sort((a,b)=>a.indicator.localeCompare(b.indicator)||a.country.localeCompare(b.country)||a.year-b.year);
 const countrySet=new Set(records.map(r=>r.countryCode));const years=records.map(r=>r.year);
 if(records.length<MIN_RECORDS||countrySet.size<MIN_COUNTRIES)throw new Error(`Quality gate failed: ${records.length} records, ${countrySet.size} countries`);
