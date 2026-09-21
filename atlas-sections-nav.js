@@ -9,7 +9,8 @@
   const icon=name=>`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${({home:'<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Zm6-3v15m6-12v15"/>',world:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-6 6-6 12 0 18 6-6 6-12 0-18Z"/>',reference:'<path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1Zm0 0v15"/>',mechanisms:'<path d="M12 3 4 8v8l8 5 8-5V8l-8-5Z"/><path d="m8 10 4 2 4-2M12 12v5"/>',glossary:'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4Z"/><path d="M8 8h7M8 12h7M8 16h4"/>',methodology:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.1"/>'})[name]||''}</svg>`;
   function lang(){try{const v=localStorage.getItem('atlas-preview-language');return ['ru','kk','en'].includes(v)?v:'ru'}catch{return'ru'}}
   function currentPage(){const p=(location.pathname.split('/').pop()||'index.html').toLowerCase();return Object.entries(pages).find(([,file])=>file===p)?.[0]||'home'}
-  function loadCss(){if(document.querySelector('link[data-atlas-unified]'))return;const l=document.createElement('link');l.rel='stylesheet';l.href='./atlas-unified.css?v=20260921-2';l.dataset.atlasUnified='1';document.head.appendChild(l)}
+  function ensureStyle(selector,href,key){if(document.querySelector(selector))return;const l=document.createElement('link');l.rel='stylesheet';l.href=href;l.dataset[key]='1';document.head.appendChild(l)}
+  function loadCss(){ensureStyle('link[data-atlas-unified]','./atlas-unified.css?v=20260921-2','atlasUnified');ensureStyle('link[data-atlas-branding]','./assets/branding/branding.css?v=20260921-1','atlasBranding')}
   function ensureFavicons(){
     const href='./assets/branding/favicon.png';
     let iconLink=document.querySelector('link[data-atlas-favicon]');
