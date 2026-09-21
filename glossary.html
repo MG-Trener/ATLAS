@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f4f8fb">
-  <meta name="description" content="Структурированный справочник AMR: изоляты, AST, S/I/R, MIC, breakpoints, ECOFF, механизмы резистентности, GLASS, WHONET, статистика и доверительные интервалы.">
+  <meta name="description" content="Структурированный справочник AMR: изоляты, AST, S/I/R, MIC, клинические пороговые значения, ECOFF, механизмы резистентности, GLASS, WHONET, статистика и доверительные интервалы.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
   <title>Словарь AMR — AMR Atlas</title>
   <link rel="icon" href="./assets/branding/favicon.png" type="image/png"><link rel="apple-touch-icon" href="./assets/branding/favicon.png"><link rel="stylesheet" href="./atlas-explorer.css?v=20260920-2"><link rel="stylesheet" href="./atlas-sections.css?v=20260921-full"><link rel="stylesheet" href="./glossary-light.css?v=20260921">
@@ -16,7 +16,7 @@
     <section class="glossary-intro-grid" aria-label="Как читать справочник">
       <article class="glossary-intro"><b>1. Сначала смотрите контекст</b><p>Один и тот же организм имеет разные профили в крови, моче, дыхательных образцах и разных популяциях пациентов.</p></article>
       <article class="glossary-intro"><b>2. Проверяйте знаменатель</b><p>Процент без числа протестированных изолятов и правил дедупликации легко переоценить.</p></article>
-      <article class="glossary-intro"><b>3. Учитывайте стандарт AST</b><p>EUCAST и CLSI используют собственные breakpoint-таблицы и версии; их нельзя механически смешивать.</p></article>
+      <article class="glossary-intro"><b>3. Учитывайте стандарт AST</b><p>EUCAST и CLSI используют собственные таблицы клинических пороговых значений (breakpoints) и версии; их нельзя механически смешивать.</p></article>
       <article class="glossary-intro"><b>4. Отличайте факт от интерпретации</b><p>MIC и диаметр зоны — измерения; S/I/R — интерпретация этих измерений относительно конкретного стандарта.</p></article>
     </section>
 
@@ -24,10 +24,10 @@
     <div class="glossary-layout"><aside class="glossary-index"><h3>Разделы</h3><nav id="glossary-index"></nav></aside><div class="glossary-content" id="glossary-content"></div></div>
 
     <section class="section-card" id="wilson" style="margin-top:18px"><div class="eyebrow">Статистика</div><h2>95% доверительный интервал методом Уилсона</h2><div class="calc-wrap"><div><p class="muted">Для долей резистентности простая формула p ± 1,96×SE может вести себя плохо при малом n или долях близких к 0% и 100%. Интервал Уилсона остаётся внутри 0–100% и обычно даёт более корректную оценку неопределённости.</p><div class="calc-grid"><label>Устойчивых изолятов R<input id="wilson-r" type="number" min="0" value="29"></label><label>Всего протестировано n<input id="wilson-n" type="number" min="1" value="100"></label></div><pre class="formula">p̂ = R / n
-center = (p̂ + z²/(2n)) / (1 + z²/n)
-half = z/(1 + z²/n) × √(p̂(1-p̂)/n + z²/(4n²))
-95% ДИ = center ± half, z = 1.96</pre><div class="glossary-stat-note"><div><b>Пример</b>29 R из 100 = 29%. Доверительный интервал показывает статистическую неопределённость вокруг этой оценки.</div><div><b>Не путать</b>95% ДИ не означает «95% пациентов будут иметь резистентность в этом диапазоне».</div></div></div><div class="calc-result" id="wilson-result"></div></div></section>
+c = (p̂ + z²/(2n)) / (1 + z²/n)
+h = z/(1 + z²/n) × √(p̂(1-p̂)/n + z²/(4n²))
+95% ДИ = c ± h, z = 1.96</pre><div class="glossary-stat-note"><div><b>Пример</b>29 R из 100 = 29%. Доверительный интервал показывает статистическую неопределённость вокруг этой оценки.</div><div><b>Не путать</b>95% ДИ не означает «95% пациентов будут иметь резистентность в этом диапазоне».</div></div></div><div class="calc-result" id="wilson-result"></div></div></section>
 
-    <section class="section-card sources" style="margin-top:18px"><div class="eyebrow">Базовые первоисточники</div><h2>Методологическая основа справочника</h2><a href="https://www.who.int/publications/i/item/9789240076600" target="_blank" rel="noopener noreferrer">WHO — GLASS manual for AMR surveillance in common bacteria ↗</a><a href="https://www.who.int/publications/i/item/9789240116337" target="_blank" rel="noopener noreferrer">WHO — Global antibiotic resistance surveillance report 2025 ↗</a><a href="https://www.eucast.org/bacteria/clinical-breakpoints-and-interpretation/definition-of-s-i-and-r/" target="_blank" rel="noopener noreferrer">EUCAST — Definition of S, I and R ↗</a><a href="https://www.eucast.org/bacteria/clinical-breakpoints-and-interpretation/clinical-breakpoint-tables/" target="_blank" rel="noopener noreferrer">EUCAST — Clinical breakpoint tables ↗</a><a href="https://clsi.org/shop/standards/m100/" target="_blank" rel="noopener noreferrer">CLSI — M100 Performance Standards for AST ↗</a><p class="muted">У отдельных терминов ниже указаны более специфические источники. Если рекомендации EUCAST/CLSI или WHO обновляются, приоритет имеет актуальная версия первоисточника.</p></section>
+    <section class="section-card sources" style="margin-top:18px"><div class="eyebrow">Базовые первоисточники</div><h2>Методологическая основа справочника</h2><a href="https://www.who.int/publications/i/item/9789240076600" target="_blank" rel="noopener noreferrer">WHO — руководство GLASS по эпиднадзору за AMR у распространённых бактерий ↗</a><a href="https://www.who.int/publications/i/item/9789240116337" target="_blank" rel="noopener noreferrer">WHO — глобальный отчёт по эпиднадзору за антибиотикорезистентностью, 2025 ↗</a><a href="https://www.eucast.org/bacteria/clinical-breakpoints-and-interpretation/definition-of-s-i-and-r/" target="_blank" rel="noopener noreferrer">EUCAST — определение категорий S, I и R ↗</a><a href="https://www.eucast.org/bacteria/clinical-breakpoints-and-interpretation/clinical-breakpoint-tables/" target="_blank" rel="noopener noreferrer">EUCAST — таблицы клинических пороговых значений ↗</a><a href="https://clsi.org/shop/standards/m100/" target="_blank" rel="noopener noreferrer">CLSI M100 — стандарты интерпретации AST ↗</a><p class="muted">У отдельных терминов ниже указаны более специфические источники. Если рекомендации EUCAST/CLSI или WHO обновляются, приоритет имеет актуальная версия первоисточника.</p></section>
   </main>
 </body></html>
