@@ -13,7 +13,7 @@
   };
   const COUNTRY_OVERRIDES={KAZ:'Казахстан',USA:'США',GBR:'Великобритания',RUS:'Россия',KOR:'Республика Корея',PRK:'КНДР',CZE:'Чехия',TUR:'Турция',IRN:'Иран',VNM:'Вьетнам',LAO:'Лаос',BOL:'Боливия',VEN:'Венесуэла',TZA:'Танзания',SYR:'Сирия'};
   const displayNames=typeof Intl.DisplayNames==='function'?new Intl.DisplayNames(['ru'],{type:'region'}):null;
-  const countryNames=new Map();
+  const countryNames=new Map(),countryEnglish=new Map();
   let scheduled=false;
 
   function isRu(){try{return (localStorage.getItem('atlas-preview-language')||'ru')==='ru'}catch{return true}}
@@ -34,12 +34,20 @@
   function replacePhrases(text){
     return String(text||'')
       .replaceAll('WHO GLASS standard','Стандарт WHO GLASS')
+      .replaceAll('Версия WHO snapshot','Версия снимка данных WHO')
       .replaceAll('national/WHONET','национальные данные / WHONET')
       .replaceAll('global GLASS snapshot','глобальный снимок данных GLASS')
       .replaceAll('WHO GLASS snapshot','снимок данных WHO GLASS')
       .replaceAll('WHO snapshot','снимок данных WHO')
       .replaceAll('WHO GLASS Dashboard / XMART','WHO GLASS / XMART')
-      .replaceAll('Расширенный каталог · ожидает national/WHONET','Расширенный каталог · ожидает национальные данные / WHONET');
+      .replaceAll('Расширенный каталог · ожидает national/WHONET','Расширенный каталог · ожидает национальные данные / WHONET')
+      .replace(/\bBLOOD\b/gi,'Кровь')
+      .replace(/\bURINE\b/gi,'Моча')
+      .replace(/\bRESPIRATORY\b/gi,'Респираторный материал')
+      .replace(/\bSPUTUM\b/gi,'Мокрота')
+      .replace(/\bCSF\b/gi,'Спинномозговая жидкость')
+      .replace(/\bSTOOL\b/gi,'Кал')
+      .replace(/\bGENITAL\b/gi,'Урогенитальный материал');
   }
   function localizeOptions(){
     const infection=document.getElementById('infection');
@@ -74,7 +82,8 @@
     const current=document.querySelector('#country-panel .muted');
     if(current){
       const html=current.innerHTML;
-      const localized=Object.entries(DRUGS).reduce((s,[en,ru])=>s.replaceAll(en,ru),html).replace(/\bBLOOD\b/gi,'Кровь').replace(/\bURINE\b/gi,'Моча').replace(/\bRESPIRATORY\b/gi,'Респираторный материал');
+      let localized=Object.entries(DRUGS).reduce((s,[en,ru])=>s.replaceAll(en,ru),html);
+      localized=replacePhrases(localized);
       if(localized!==html)current.innerHTML=localized;
     }
   }
@@ -83,12 +92,29 @@
   async function loadCountries(){
     try{
       const r=await fetch(GEO,{cache:'force-cache'});if(!r.ok)return;const geo=await r.json();
-      for(const f of geo.features||[]){const p=f.properties||{},a3=p['ISO3166-1-Alpha-3']||p.ISO_A3||p.iso_a3||p.ADM0_A3||p.ISO3,a2=p['ISO3166-1-Alpha-2']||p.ISO_A2||p.iso_a2;if(!a3)continue;let name=COUNTRY_OVERRIDES[a3];if(!name&&displayNames&&a2&&a2!=='-99'){try{name=displayNames.of(a2)}catch{}}if(name)countryNames.set(a3,name)}
+      for(const f of geo.features||[]){
+        const p=f.properties||{},a3=p['ISO3166-1-Alpha-3']||p.ISO_A3||p.iso_a3||p.ADM0_A3||p.ISO3,a2=p['ISO3166-1-Alpha-2']||p.ISO_A2||p.iso_a2;
+        if(!a3)continue;
+        const en=p.name||p.ADMIN||p.NAME||a3;countryEnglish.set(a3,en);
+        let name=COUNTRY_OVERRIDES[a3];if(!name&&displayNames&&a2&&a2!=='-99'){try{name=displayNames.of(a2)}catch{}}
+        if(name)countryNames.set(a3,name);
+      }
     }catch{}
     schedule();
   }
+  function bindRussianCountrySearch(){
+    const input=document.getElementById('country-search');if(!input)return;
+    input.addEventListener('input',e=>{
+      if(!isRu())return;
+      const shown=e.target.value,needle=shown.trim().toLocaleLowerCase('ru-RU');if(!needle||!/[а-яё]/i.test(needle))return;
+      const hit=[...countryNames.entries()].find(([,name])=>name.toLocaleLowerCase('ru-RU')===needle);if(!hit)return;
+      const en=countryEnglish.get(hit[0]);if(!en)return;
+      e.target.value=en;
+      setTimeout(()=>{e.target.value=shown;schedule()},0);
+    },true);
+  }
   function boot(){
-    schedule();loadCountries();
+    schedule();loadCountries();bindRussianCountrySearch();
     const roots=['world-map','country-panel','country-list','dataset-meta','mode-note','infection','pathogen','antibiotic'].map(id=>document.getElementById(id)).filter(Boolean);
     const observer=new MutationObserver(schedule);for(const root of roots)observer.observe(root,{childList:true,subtree:true,characterData:true});
     document.addEventListener('atlas:language-changed',()=>setTimeout(schedule,0));
