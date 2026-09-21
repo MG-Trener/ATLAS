@@ -5,11 +5,11 @@
   <meta name="description" content="Структурированный справочник AMR: изоляты, AST, S/I/R, MIC, breakpoints, ECOFF, механизмы резистентности, GLASS, WHONET, статистика и доверительные интервалы.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
   <title>Словарь AMR — AMR Atlas</title>
-  <link rel="icon" href="./atlas-mark.svg" type="image/svg+xml"><link rel="stylesheet" href="./atlas-explorer.css?v=20260920-2"><link rel="stylesheet" href="./atlas-sections.css?v=20260921-full"><link rel="stylesheet" href="./glossary-light.css?v=20260921">
-  <script defer src="./atlas-sections-nav.js?v=20260921"></script><script defer src="./glossary.js?v=20260921-detailed"></script>
+  <link rel="icon" href="./assets/branding/favicon.png" type="image/png"><link rel="apple-touch-icon" href="./assets/branding/favicon.png"><link rel="stylesheet" href="./atlas-explorer.css?v=20260920-2"><link rel="stylesheet" href="./atlas-sections.css?v=20260921-full"><link rel="stylesheet" href="./glossary-light.css?v=20260921">
+  <script defer src="./atlas-sections-nav.js?v=20260921-2"></script><script defer src="./glossary.js?v=20260921-detailed"></script>
 </head>
 <body class="section-page glossary-page">
-  <header class="site-header"><a class="brand" href="./index.html"><img src="./atlas-mark.svg" width="42" height="42" alt=""><span><b>AMR<span>Atlas</span></b><small>Справочник терминов</small></span></a><nav aria-label="AMR Atlas"><a href="./index.html">Карта Казахстана</a><a href="./world.html">Мир / WHO GLASS</a><a href="./reference.html">Препараты</a></nav></header>
+  <header class="site-header"><a class="brand" href="./index.html"><img class="brand-wordmark" src="./assets/branding/logo-wordmark.png" alt="AMR Atlas — антибиотикорезистентность Казахстана и мира"></a><nav aria-label="AMR Atlas"><a href="./index.html">Карта Казахстана</a><a href="./world.html">Мир / WHO GLASS</a><a href="./reference.html">Препараты</a></nav></header>
   <main class="section-shell">
     <section class="section-hero"><article class="hero-card"><div class="eyebrow">База знаний AMR Atlas</div><h1>Как понимать данные об антимикробной резистентности</h1><p>Подробный справочник лабораторных, клинических, эпидемиологических и статистических терминов. Определения привязаны к первоисточникам WHO, EUCAST, CLSI и другим профильным материалам.</p><div class="hero-actions"><a class="button" href="#terms">Перейти к терминам</a><a class="ghost-button" href="#wilson">95% ДИ Уилсона</a></div></article><aside class="hero-card"><div class="eyebrow">Ключевая оговорка</div><h2>AMR-процент — не вероятность неудачи лечения</h2><p>%R описывает долю лабораторно устойчивых изолятов в определённой выборке. Клинический исход зависит также от очага инфекции, дозирования, фармакокинетики, иммунного статуса, качества образца и других факторов.</p></aside></section>
 
@@ -20,7 +20,7 @@
       <article class="glossary-intro"><b>4. Отличайте факт от интерпретации</b><p>MIC и диаметр зоны — измерения; S/I/R — интерпретация этих измерений относительно конкретного стандарта.</p></article>
     </section>
 
-    <section class="section-card" id="terms"><div class="glossary-toolbar"><div class="glossary-search"><input id="term-search" type="search" placeholder="Поиск: изолят, S/I/R, MIC, ДИ, Уилсон, ESBL, MDR, GLASS…" autocomplete="off"></div><div class="chip-row" id="term-groups"></div></div></section>
+    <section class="section-card" id="terms"><div class="glossary-toolbar"><div class="glossary-search"><input id="term-search" type="search" placeholder="Поиск: изолят, S/I/R, MIC, ДИ, Уилсон, ESBL, MDR, GLASS…" autocomplete="off"></div><div class="chip-row" id="term-groups"></div></section>
     <div class="glossary-layout"><aside class="glossary-index"><h3>Разделы</h3><nav id="glossary-index"></nav></aside><div class="glossary-content" id="glossary-content"></div></div>
 
     <section class="section-card" id="wilson" style="margin-top:18px"><div class="eyebrow">Статистика</div><h2>95% доверительный интервал методом Уилсона</h2><div class="calc-wrap"><div><p class="muted">Для долей резистентности простая формула p ± 1,96×SE может вести себя плохо при малом n или долях близких к 0% и 100%. Интервал Уилсона остаётся внутри 0–100% и обычно даёт более корректную оценку неопределённости.</p><div class="calc-grid"><label>Устойчивых изолятов R<input id="wilson-r" type="number" min="0" value="29"></label><label>Всего протестировано n<input id="wilson-n" type="number" min="1" value="100"></label></div><pre class="formula">p̂ = R / n
