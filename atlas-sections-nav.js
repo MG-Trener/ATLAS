@@ -10,7 +10,7 @@
   function lang(){try{const v=localStorage.getItem('atlas-preview-language');return ['ru','kk','en'].includes(v)?v:'ru'}catch{return'ru'}}
   function currentPage(){const p=(location.pathname.split('/').pop()||'index.html').toLowerCase();return Object.entries(pages).find(([,file])=>file===p)?.[0]||'home'}
   function ensureStyle(selector,href,key){if(document.querySelector(selector))return;const l=document.createElement('link');l.rel='stylesheet';l.href=href;l.dataset[key]='1';document.head.appendChild(l)}
-  function loadCss(){ensureStyle('link[data-atlas-unified]','./atlas-unified.css?v=20260921-2','atlasUnified');ensureStyle('link[data-atlas-branding]','./assets/branding/branding.css?v=20260921-1','atlasBranding')}
+  function loadCss(){ensureStyle('link[data-atlas-unified]','./atlas-unified.css?v=20260921-3','atlasUnified');ensureStyle('link[data-atlas-branding]','./assets/branding/branding.css?v=20260921-2','atlasBranding')}
   function ensureFavicons(){
     const href='./assets/branding/favicon.png';
     let iconLink=document.querySelector('link[data-atlas-favicon]');
@@ -20,7 +20,7 @@
     if(!apple){apple=document.createElement('link');apple.rel='apple-touch-icon';apple.dataset.atlasAppleIcon='1';document.head.appendChild(apple)}
     apple.href=href;
   }
-  function brandHtml(){return '<img class="brand-wordmark" src="./assets/branding/logo-wordmark.png" alt="AMR Atlas — антибиотикорезистентность Казахстана и мира">'}
+  function brandHtml(){return '<img class="brand-symbol" src="./assets/branding/logo.png" alt=""><img class="brand-wordmark" src="./assets/branding/logo-wordmark.png" alt="AMR Atlas — антибиотикорезистентность Казахстана и мира">'}
   function navHtml(){const l=labels[lang()]||labels.ru,active=currentPage();return Object.entries(pages).map(([key,file])=>`<a href="./${file}" class="${active===key?'active':''}" data-atlas-nav="${key}">${icon(key)}<span>${l[key]}</span></a>`).join('')+(active==='home'?`<button type="button" data-info data-atlas-methodology>${icon('methodology')}<span>${l.methodology}</span></button>`:'')}
   function languageHtml(){const current=lang();return `<div class="language-switch" role="group" aria-label="Language / Тіл / Язык">${[['ru','RU'],['kk','ҚАЗ'],['en','EN']].map(([code,label])=>`<button type="button" data-lang="${code}" aria-pressed="${current===code}">${label}</button>`).join('')}</div>`}
   function makeHeader(){const h=document.createElement('header');h.className='site-header';h.dataset.atlasUnifiedHeader='1';h.innerHTML=`<a class="brand" href="./index.html">${brandHtml()}</a><nav aria-label="AMR Atlas">${navHtml()}</nav>${languageHtml()}`;document.body.prepend(h);return h}
@@ -29,7 +29,7 @@
     ensureFavicons();
     let h=document.querySelector('.site-header');if(!h&&shouldCreateHeader())h=makeHeader();if(!h)return false;
     h.dataset.atlasUnifiedHeader='1';let brand=h.querySelector('.brand');if(!brand){brand=document.createElement('a');brand.className='brand';h.prepend(brand)}
-    brand.href='./index.html';if(brand.dataset.atlasBrand!=='20260921'){brand.innerHTML=brandHtml();brand.dataset.atlasBrand='20260921'}
+    brand.href='./index.html';if(brand.dataset.atlasBrand!=='20260921-2'){brand.innerHTML=brandHtml();brand.dataset.atlasBrand='20260921-2'}
     let nav=h.querySelector('nav');if(!nav){nav=document.createElement('nav');h.appendChild(nav)}nav.setAttribute('aria-label','AMR Atlas');
     const signature=`${lang()}|${currentPage()}`,html=navHtml();if(nav.dataset.atlasNavSignature!==signature){nav.innerHTML=html;nav.dataset.atlasNavSignature=signature}
     if((document.body.classList.contains('reference-page')||document.body.classList.contains('mechanism-page'))&&!h.querySelector('.language-switch'))h.insertAdjacentHTML('beforeend',languageHtml());
