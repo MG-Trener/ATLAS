@@ -15,9 +15,7 @@
   }
   function needsSync(){
     const header=root.querySelector('.site-header');
-    if(!header)return false;
-    const brand=header.querySelector('.brand');
-    return header.dataset.atlasUnifiedHeader!=='1'||brand?.dataset.atlasBrand!=='20260921-2';
+    return Boolean(header&&header.dataset.atlasUnifiedHeader!=='1');
   }
   function sync(){
     queued=false;
