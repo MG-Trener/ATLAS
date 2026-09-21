@@ -39,7 +39,10 @@ for (const page of requiredPages) {
   if (!existsSync(file(page))) continue;
   const html=readFileSync(file(page),'utf8');
   const standaloneSections=new Set(['world.html','glossary.html']);
-  if (['reference.html','mechanisms.html'].includes(page) && !/atlas-themes\.js/.test(html)) fail(`${page}: unified compatibility loader is missing`);
+  const directUnifiedShell=/atlas-sections-nav\.js\?v=/.test(html) && /atlas-unified\.css\?v=/.test(html);
+  const compatibilityLoader=/atlas-themes\.js/.test(html);
+  if (['reference.html','mechanisms.html'].includes(page) && !directUnifiedShell && !compatibilityLoader) fail(`${page}: unified navigation/shell loader is missing`);
+  if (page==='reference.html' && directUnifiedShell && compatibilityLoader) fail('reference.html: direct unified shell must not also load atlas-themes.js');
   if (standaloneSections.has(page) && !/atlas-sections\.css\?v=/.test(html)) fail(`${page}: atlas-sections.css must be cache-busted`);
   if (['index.html','world.html','glossary.html'].includes(page) && !/atlas-sections-nav\.js\?v=/.test(html)) fail(`${page}: unified navigation loader is missing`);
   if (!/(RU|data-lang=["']ru["']|lang=["']ru["'])/.test(html)) warn(`${page}: no visible RU language marker found in static HTML`);
