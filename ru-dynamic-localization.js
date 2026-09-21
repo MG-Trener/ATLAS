@@ -13,7 +13,7 @@
     'Oligosaccharides':'Олигосахариды','Everninomycins':'Эвернимицины','Pseudomonic acids':'Псевдомоновые кислоты','Steroidals':'Стероидные соединения','Flavophospholipols':'Флавофосфолиполы','Peptsides':'Пептиды',
     'Fluoroquinolone':'Фторхинолон','Cephalosporin':'Цефалоспорин','Cephalosporin I':'Цефалоспорин I поколения','Cephalosporin II':'Цефалоспорин II поколения','Cephalosporin III':'Цефалоспорин III поколения','Cephalosporin IV':'Цефалоспорин IV поколения',
     'Quinolone':'Хинолон','Carbapenems':'Карбапенемы','Penicillin (Stable)':'Пенициллиназоустойчивый пенициллин','Cephamycin':'Цефамицин','Ureidopenicillin':'Уреидопенициллин','Aminopenicillin':'Аминопенициллин',
-    'Carboxypenicillin':'Карбоксипенициллин','Ketolide':'Кетолид','Lipoglycopeptide':'Липогликопептид','Penem':'Пенем','Penicillin':'Пенициллин','Polymyxin':'Полимиксин','Oxacephem':'Оксацефем','Carbacephem':'Карбацефем','Glycopeptide':'Гликопептид',
+    'Carboxypenicillin':'Карбоксипенициллин','Ketolide':'Кетолид','Lipoglycopeptide':'Липогликопептид','Penem':'Пенем','Penicillin':'Пенициллин','Polymyxin':'Полимиксин','Oxacephem':'Оксацефем','Carbacephem':'Карбaцефем','Glycopeptide':'Гликопептид',
     'Anti-staphylococcal beta-lactams':'Антистафилококковые β-лактамы','Beta-lactams':'β-лактамы','Cephalosporins':'Цефалоспорины','Cephamycins':'Цефамицины','Extended-spectrum cephalosporins':'Цефалоспорины расширенного спектра',
     'Fluoroquinolones':'Фторхинолоны','Multiple classes':'Несколько классов','Polymyxins':'Полимиксины',
     'critical':'критический','Critical':'Критический','high':'высокий','High':'Высокий','medium':'средний','Medium':'Средний','low':'низкий','Low':'Низкий',
@@ -30,7 +30,12 @@
   }
   function localizeFilters(){
     const primary=document.getElementById('filter-primary');
-    if(primary)for(const o of primary.options){const raw=o.value||o.textContent.trim();if(raw)o.textContent=translate(raw)}
+    if(primary)for(const o of primary.options){
+      const raw=o.value||o.textContent.trim();
+      if(!raw)continue;
+      const next=translate(raw);
+      if(o.textContent!==next)o.textContent=next;
+    }
   }
   function simplifyAntimicrobialEnglish(){
     const tab=document.querySelector('.reference-tabs [data-tab="antimicrobials"].active, .reference-nav [data-tab="antimicrobials"].active');
@@ -42,7 +47,7 @@
     document.querySelectorAll('#reference-detail .detail-text p, #mechanism-detail .mechanism-description').forEach(p=>{const s=p.textContent.trim();if(s.length>70&&mostlyLatin(s)){p.lang='en';p.title='Оригинальный текст источника на английском языке';}})
   }
   function apply(){pending=false;if(!isRu())return;localizeFilters();for(const selector of ['#catalog-list','#reference-detail','#mechanism-list','#mechanism-detail','#mechanism-category']){const root=document.querySelector(selector);if(root)translateTextNodes(root)}simplifyAntimicrobialEnglish();markUntranslatedProse()}
-  function schedule(){if(pending)return;pending=true;queueMicrotask(apply)}
-  function boot(){schedule();const roots=['catalog-list','reference-detail','filter-primary','mechanism-list','mechanism-detail','mechanism-category'].map(id=>document.getElementById(id)).filter(Boolean);const observer=new MutationObserver(schedule);for(const r of roots)observer.observe(r,{childList:true,subtree:true,characterData:true});document.addEventListener('atlas:language-changed',()=>setTimeout(schedule,0));document.addEventListener('click',e=>{if(e.target.closest?.('[data-lang],[data-tab]'))setTimeout(schedule,20)})}
+  function schedule(){if(pending)return;pending=true;requestAnimationFrame(apply)}
+  function boot(){schedule();const roots=['catalog-list','reference-detail','filter-primary','mechanism-list','mechanism-detail','mechanism-category'].map(id=>document.getElementById(id)).filter(Boolean);const observer=new MutationObserver(schedule);for(const r of roots)observer.observe(r,{childList:true,subtree:true});document.addEventListener('atlas:language-changed',()=>setTimeout(schedule,0));document.addEventListener('click',e=>{if(e.target.closest?.('[data-lang],[data-tab]'))setTimeout(schedule,20)})}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
