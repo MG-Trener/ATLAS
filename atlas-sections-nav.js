@@ -1,5 +1,7 @@
 (()=>{
   'use strict';
+  if(window.__atlasSectionsNavLoaded)return;
+  window.__atlasSectionsNavLoaded=true;
   const labels={
     ru:{home:'Казахстан',world:'Мир / WHO GLASS',reference:'Справочник',mechanisms:'Механизмы',glossary:'Словарь AMR',methodology:'Методология'},
     kk:{home:'Қазақстан',world:'Әлем / WHO GLASS',reference:'Анықтамалық',mechanisms:'Механизмдер',glossary:'AMR сөздігі',methodology:'Әдістеме'},
@@ -36,8 +38,14 @@
     return true;
   }
   function bindLanguage(){document.addEventListener('click',e=>{const b=e.target.closest?.('.site-header [data-lang]');if(!b)return;const code=b.dataset.lang;if(!['ru','kk','en'].includes(code))return;try{localStorage.setItem('atlas-preview-language',code)}catch{}document.querySelectorAll('.site-header [data-lang]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.lang===code)));document.dispatchEvent(new CustomEvent('atlas:language-changed',{detail:{language:code}}));setTimeout(normalizeHeader,0)});}
+  function boot(){
+    if(normalizeHeader())return;
+    const root=document.getElementById('atlas-app')||document.body;
+    const observer=new MutationObserver(()=>{if(normalizeHeader())observer.disconnect()});
+    observer.observe(root,{childList:true,subtree:true});
+    setTimeout(()=>observer.disconnect(),5000);
+  }
   loadCss();ensureFavicons();bindLanguage();
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',normalizeHeader,{once:true});else normalizeHeader();
-  new MutationObserver(()=>normalizeHeader()).observe(document.documentElement,{childList:true,subtree:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
   document.addEventListener('atlas:language-changed',()=>setTimeout(normalizeHeader,0));
 })();
