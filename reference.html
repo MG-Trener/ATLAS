@@ -33,16 +33,16 @@
       <div class="side-spacer"></div>
       <div class="side-callout reference-callout">
         <strong data-i18n="sourceTitle">Источник справочника</strong>
-        <p>WHONET / AMRIE<br><b>snapshot 15.09.2026</b><br><code>aa499717…</code></p>
+        <p>WHONET / AMRIE<br><b>снимок данных 15.09.2026</b><br><code>aa499717…</code></p>
       </div>
-      <div class="side-footer">Supabase · read-only catalog</div>
+      <div class="side-footer">Supabase · каталог только для чтения</div>
     </aside>
 
     <main class="workspace">
       <header class="topbar reference-topbar">
         <div class="reference-status"><i></i><span data-i18n="liveDb">Supabase подключена</span></div>
         <div class="top-actions">
-          <div class="language-switch" role="group" aria-label="Language">
+          <div class="language-switch" role="group" aria-label="Язык">
             <button type="button" data-lang="ru">RU</button>
             <button type="button" data-lang="kk">KZ</button>
             <button type="button" data-lang="en">EN</button>
@@ -70,18 +70,18 @@
         <section class="reference-kpis">
           <article><span>◉</span><div><small data-i18n="organismCodes">WHONET-кодов микроорганизмов</small><strong id="organism-count">2 381</strong><em data-i18n="fullSource">полный источник</em></div></article>
           <article><span>◇</span><div><small data-i18n="drugCodes">Кодов антимикробных препаратов</small><strong id="antimicrobial-count">401</strong><em>ATC · AWaRe · LOINC</em></div></article>
-          <article><span>✓</span><div><small data-i18n="accessMode">Доступ с сайта</small><strong data-i18n="readOnly">Только чтение</strong><em>RLS + publishable key</em></div></article>
+          <article><span>✓</span><div><small data-i18n="accessMode">Доступ с сайта</small><strong data-i18n="readOnly">Только чтение</strong><em>RLS · публичный ключ доступа</em></div></article>
         </section>
 
-        <section class="reference-tabs" aria-label="Catalog type">
+        <section class="reference-tabs" aria-label="Тип каталога">
           <button type="button" class="active" data-tab="organisms"><span>◉</span><b data-i18n="organisms">Микроорганизмы</b><em>2 381</em></button>
           <button type="button" data-tab="antimicrobials"><span>◇</span><b data-i18n="antimicrobials">Антимикробные препараты</b><em>401</em></button>
         </section>
 
         <section class="reference-toolbar">
           <label class="reference-search"><span>⌕</span><input id="reference-search" type="search" autocomplete="off" data-i18n-placeholder="searchOrganisms" placeholder="Код, название, род, семейство…" /></label>
-          <select id="filter-primary" aria-label="Primary filter"><option value="">Все</option></select>
-          <select id="filter-secondary" aria-label="Secondary filter"><option value="">Все</option></select>
+          <select id="filter-primary" aria-label="Основной фильтр"><option value="">Все</option></select>
+          <select id="filter-secondary" aria-label="Дополнительный фильтр"><option value="">Все</option></select>
           <button id="clear-filters" class="clear-filters" type="button" data-i18n="reset">Сбросить</button>
         </section>
 
