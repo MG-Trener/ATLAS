@@ -1,6 +1,6 @@
 (()=>{
-const GEO='https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson';
-const SNAPSHOT='./data/who-glass.json?v=20260921-modes';
+const GEO='https://raw.githubusercontent.com/PublicaMundi/MappingAPI/refs/heads/master/data/geojson/countries.geojson';
+const SNAPSHOT='./data/who-glass.json?v=20260921-compact';
 const state={data:null,geo:null,mode:'standard',infection:null,pathogen:null,antibiotic:null,year:'latest',country:'USA',search:''};
 const $=id=>document.getElementById(id);
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -39,9 +39,14 @@ const EXTENDED_DRUGS={
   'Neisseria gonorrhoeae':['Azithromycin','Cefixime','Ceftriaxone','Ciprofloxacin']
 };
 
-async function json(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);return r.json();}
-function validDataset(d){return d?.meta?.schemaVersion==='2.0'&&Array.isArray(d.records)&&d.records.length>0;}
-function geoCode(f){const p=f.properties||{};return p['ISO3166-1-Alpha-3']||p.ISO_A3||p.iso_a3||p.ADM0_A3||p.ISO3||'';}
+async function json(url,force=false){const r=await fetch(url,{cache:force?'no-store':'force-cache'});if(!r.ok)throw new Error(`HTTP ${r.status}`);return r.json();}
+function normalizeDataset(d){
+  if(d?.meta?.schemaVersion!=='2.1'||!Array.isArray(d.records)||!Array.isArray(d.records[0]))return d;
+  const dimensions=d.dimensions||{}, infections=dimensions.infections||[], pathogens=dimensions.pathogens||[], antibiotics=dimensions.antibiotics||[];
+  return {...d,records:d.records.map(r=>({countryCode:r[0],year:r[1],infection:infections[r[2]],pathogen:pathogens[r[3]],antibiotic:antibiotics[r[4]],percentResistant:r[5],resistant:r[6],interpretableAST:r[7],totalSpecimenIsolates:r[8]}))};
+}
+function validDataset(d){return ['2.0','2.1'].includes(d?.meta?.schemaVersion)&&Array.isArray(d.records)&&d.records.length>0;}
+function geoCode(f){const p=f.properties||{};return f.id||p['ISO3166-1-Alpha-3']||p.ISO_A3||p.iso_a3||p.ADM0_A3||p.ISO3||'';}
 function geoName(f){const p=f.properties||{};return p.name||p.ADMIN||p.NAME||geoCode(f);}
 function countryName(code){const f=state.geo?.features?.find(x=>geoCode(x)===code);return f?geoName(f):code;}
 function project(pt){return[(Number(pt[0])+180)/360*1000,(90-Number(pt[1]))/180*500];}
@@ -78,8 +83,8 @@ function renderCountry(){const panel=$('country-panel'),current=currentRecord(st
 function renderList(){const list=$('country-list');if(!list)return;const q=state.search.trim().toLowerCase();const rows=recordsForMap().map(r=>({...r,name:countryName(r.countryCode)})).filter(r=>!q||r.name.toLowerCase().includes(q)||r.countryCode.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'ru'));list.innerHTML=rows.map(r=>`<button type="button" data-pick="${safe(r.countryCode)}" class="${r.countryCode===state.country?'active':''}"><span>${safe(r.name)}<small>${safe(r.year)}</small></span><b>${fmt(r.percentResistant)}%</b></button>`).join('')||'<div class="empty-state">Нет глобальных WHO-данных по выбранной комбинации.</div>';list.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click',()=>{state.country=b.dataset.pick;renderMap();renderCountry();}));}
 function ensureSelectedCountry(){const codes=new Set(recordsForMap().map(r=>r.countryCode));if(!codes.size)return;if(codes.has(state.country))return;if(codes.has('USA'))state.country='USA';else if(codes.has('KAZ'))state.country='KAZ';else state.country=[...codes][0];}
 function renderAll(){renderControls();ensureSelectedCountry();renderMeta();renderMap();renderCountry();renderList();}
-async function loadGeo(){try{state.geo=await json(GEO);}catch(e){console.error(e);state.geo={features:[]};}renderAll();}
-async function loadSnapshot(force=false){const btn=$('refresh-who');if(btn){btn.disabled=true;btn.textContent='Обновление…';}try{const d=await json(`${SNAPSHOT}${force?`&t=${Date.now()}`:''}`);if(!validDataset(d))throw new Error('snapshot schema mismatch');state.data=d;chooseBestDefaults();renderAll();}catch(e){console.error(e);$('dataset-meta').innerHTML=`<div class="callout warning"><strong>Не удалось загрузить WHO GLASS snapshot.</strong> ${safe(e.message)}</div>`;}finally{if(btn){btn.disabled=false;btn.textContent='Перезагрузить данные';}}}
+async function loadGeo(){try{state.geo=await json(GEO);}catch(e){console.error(e);state.geo={features:[]};}if(state.data)renderAll();}
+async function loadSnapshot(force=false){const btn=$('refresh-who');if(btn){btn.disabled=true;btn.textContent='Обновление…';}try{const raw=await json(`${SNAPSHOT}${force?`&t=${Date.now()}`:''}`,force);const d=normalizeDataset(raw);if(!validDataset(d))throw new Error('snapshot schema mismatch');state.data=d;chooseBestDefaults();renderAll();}catch(e){console.error(e);$('dataset-meta').innerHTML=`<div class="callout warning"><strong>Не удалось загрузить WHO GLASS snapshot.</strong> ${safe(e.message)}</div>`;}finally{if(btn){btn.disabled=false;btn.textContent='Перезагрузить данные';}}}
 document.querySelectorAll('[data-amr-mode]').forEach(b=>b.addEventListener('click',()=>{state.mode=b.dataset.amrMode;state.year='latest';renderAll();}));
 $('infection').addEventListener('change',e=>{state.infection=e.target.value;state.pathogen=null;state.antibiotic=null;state.year='latest';renderAll();});
 $('pathogen').addEventListener('change',e=>{state.pathogen=e.target.value;state.antibiotic=null;state.year='latest';renderAll();});
@@ -87,5 +92,5 @@ $('antibiotic').addEventListener('change',e=>{state.antibiotic=e.target.value;st
 $('year').addEventListener('change',e=>{state.year=e.target.value;renderAll();});
 $('country-search').addEventListener('input',e=>{state.search=e.target.value;renderList();});
 $('refresh-who').addEventListener('click',()=>loadSnapshot(true));
-(async()=>{await loadSnapshot(false);await loadGeo();})();
+loadSnapshot(false);loadGeo();
 })();
