@@ -6,7 +6,7 @@ const root = process.cwd();
 const requiredPages = ['index.html','reference.html','mechanisms.html','world.html','glossary.html'];
 const legacyRedirects = ['national-atlas.html','command-center.html','clinical-preview.html'];
 const requiredShared = [
-  'atlas-model.mjs','atlas-copy.mjs','atlas-explorer.mjs','atlas-explorer.css','atlas-mark.svg','atlas-unified.css',
+  'atlas-shell.mjs','atlas-shell.css','atlas-workspace.css','reference-workspace.css','atlas-model.mjs','atlas-copy.mjs','atlas-explorer.mjs','atlas-explorer.css','atlas-mark.svg','atlas-unified.css',
   'atlas-themes.js','atlas-global-i18n.js','atlas-i18n-extensions.js','atlas-global-i18n.css',
   'platform-status.js','platform-status.css','platform-manifest.json','regions-loader.js','regions.json','atlas-readable-type.css',
   'analysis-context.js','amr-demo-data.js','regional-analysis.js','unified-analytics.js','whonet-quality.css',
@@ -39,12 +39,12 @@ for (const page of requiredPages) {
   if (!existsSync(file(page))) continue;
   const html=readFileSync(file(page),'utf8');
   const standaloneSections=new Set(['world.html','glossary.html']);
-  const directUnifiedShell=/atlas-sections-nav\.js\?v=/.test(html) && /atlas-unified\.css\?v=/.test(html);
+  const directUnifiedShell=/(atlas-sections-nav\.js|atlas-shell\.mjs)\?v=/.test(html) && /(atlas-unified|atlas-shell)\.css\?v=/.test(html);
   const compatibilityLoader=/atlas-themes\.js/.test(html);
   if (['reference.html','mechanisms.html'].includes(page) && !directUnifiedShell && !compatibilityLoader) fail(`${page}: unified navigation/shell loader is missing`);
   if (page==='reference.html' && directUnifiedShell && compatibilityLoader) fail('reference.html: direct unified shell must not also load atlas-themes.js');
   if (standaloneSections.has(page) && !/atlas-sections\.css\?v=/.test(html)) fail(`${page}: atlas-sections.css must be cache-busted`);
-  if (['index.html','world.html','glossary.html'].includes(page) && !/atlas-sections-nav\.js\?v=/.test(html)) fail(`${page}: unified navigation loader is missing`);
+  if (['index.html','world.html','glossary.html'].includes(page) && !/(atlas-sections-nav\.js|atlas-explorer\.mjs)\?v=/.test(html)) fail(`${page}: unified navigation loader is missing`);
   if (!/(RU|data-lang=["']ru["']|lang=["']ru["'])/.test(html)) warn(`${page}: no visible RU language marker found in static HTML`);
   for (const ref of localRefs(html)) if (!existsSync(file(ref))) fail(`${page}: broken local reference -> ${ref}`);
 }

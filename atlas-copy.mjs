@@ -1,5 +1,11 @@
 // Explicit translations; no DOM text replacement or recursive mutation observers.
 const strings = {
+  quickView:['Быстрый просмотр','Жылдам қарау','Quick view'],
+  openProfile:['Открыть профиль региона','Өңір профилін ашу','Open region profile'],
+  backToRegions:['К списку регионов','Өңірлер тізіміне','Back to regions'],
+  analysisOverview:['Обзор','Шолу','Overview'],
+  compact:['Компактно','Ықшам','Compact'],
+  yearToDate:['с начала года','жыл басынан','year to date'],
   brand:['Атлас антимикробной резистентности','Микробқа қарсы тұрақтылық атласы','Antimicrobial resistance atlas'],
   mapNav:['Карта и регионы','Карта және өңірлер','Map & regions'],
   reference:['Справочник','Анықтамалық','Reference'],
