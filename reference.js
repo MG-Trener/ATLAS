@@ -22,6 +22,10 @@
   Object.assign(dict.kk,{priorityCrab:'WHO BPPL 2024: карбапенемге төзімді A. baumannii · критикалық басымдық',astContext:'Маңызды: breakpoint, S/I/R санаты және рұқсат етілген әдіс организм × препарат жұбына, стандартқа және оның нұсқасына тәуелді. Төмендегі дискілер тізімі — әмбебап тестілеу нұсқауы емес, WHONET анықтамалық метадеректері.'});
   Object.assign(dict.en,{priorityCrab:'WHO BPPL 2024: carbapenem-resistant A. baumannii · critical priority',astContext:'Important: breakpoints, S/I/R categories and valid methods depend on the organism × agent pair, standard and version. Disk variants below are WHONET reference metadata, not universal testing instructions.'});
 
+  Object.assign(dict.ru,{workspaceTitle:'Справочник AMR',workspaceSubtitle:'Микроорганизмы, препараты и их клинический контекст.',knowledgeBase:'БАЗА ЗНАНИЙ · WHONET',sourceVersion:'Источник и версия',backToCatalog:'← К списку',skipSearch:'Перейти к поиску'});
+  Object.assign(dict.kk,{workspaceTitle:'AMR анықтамалығы',workspaceSubtitle:'Микроорганизмдер, препараттар және олардың клиникалық контексті.',knowledgeBase:'БІЛІМ БАЗАСЫ · WHONET',sourceVersion:'Дереккөз және нұсқа',backToCatalog:'← Тізімге',skipSearch:'Іздеуге өту'});
+  Object.assign(dict.en,{workspaceTitle:'AMR reference',workspaceSubtitle:'Organisms, antimicrobials and their clinical context.',knowledgeBase:'KNOWLEDGE BASE · WHONET',sourceVersion:'Source and version',backToCatalog:'← Back to list',skipSearch:'Skip to search'});
+
   const state = {
     language: ['ru','kk','en'].includes(localStorage.getItem('atlas-preview-language')) ? localStorage.getItem('atlas-preview-language') : 'ru',
     tab: new URLSearchParams(location.search).get('tab') === 'antimicrobials' ? 'antimicrobials' : 'organisms',
@@ -49,6 +53,7 @@
     $$('[data-lang]').forEach(btn => btn.classList.toggle('active', btn.dataset.lang === state.language));
     $$('[data-i18n]').forEach(node => { const value = t(node.dataset.i18n); if (value != null) node.innerHTML = value; });
     $$('[data-i18n-placeholder]').forEach(node => node.setAttribute('placeholder', t(node.dataset.i18nPlaceholder)));
+    els.search.setAttribute('aria-label',t(state.tab==='organisms'?'searchOrganisms':'searchDrugs'));
     configureFilters(false);
     renderList();
     renderDetail();
@@ -63,10 +68,12 @@
       els.primary.innerHTML = `<option value="">${esc(t('allKingdoms'))}</option><option value="Bacteria">Bacteria</option><option value="Fungi">Fungi</option><option value="Protozoa">Protozoa</option>`;
       els.secondary.innerHTML = `<option value="">${esc(t('allStatuses'))}</option><option value="common">${esc(t('commonOnly'))}</option><option value="current">${esc(t('currentOnly'))}</option><option value="obsolete">${esc(t('obsoleteOnly'))}</option>`;
       els.search.setAttribute('placeholder', t('searchOrganisms'));
+      els.search.setAttribute('aria-label', t('searchOrganisms'));
     } else {
       els.primary.innerHTML = `<option value="">${esc(t('allAware'))}</option><option value="Access">Access</option><option value="Watch">Watch</option><option value="Reserve">Reserve</option>`;
       els.secondary.innerHTML = `<option value="">${esc(t('allScopes'))}</option><option value="human">${esc(t('human'))}</option><option value="veterinary">${esc(t('veterinary'))}</option>`;
       els.search.setAttribute('placeholder', t('searchDrugs'));
+      els.search.setAttribute('aria-label', t('searchDrugs'));
     }
     els.primary.value = primaryValue;
     els.secondary.value = secondaryValue;
@@ -126,6 +133,7 @@
       els.error.textContent = `${t('loadError')} ${error?.message || ''}`;
       els.error.hidden = false;
       state.rows = [];
+      state.selected = null;
       state.total = 0;
       renderDetail();
       updateSummary();
@@ -155,15 +163,19 @@
     els.list.innerHTML = state.rows.map(row => {
       const active = state.selected?.whonet_code === row.whonet_code ? ' active' : '';
       if (state.tab === 'organisms') {
-        return `<button class="catalog-row${active}" type="button" data-code="${esc(row.whonet_code)}"><span class="ref-code">${esc(row.whonet_code)}</span><span class="ref-name"><strong><i>${esc(row.organism)}</i></strong><small>${esc([row.genus,row.family].filter(Boolean).join(' · '))}</small></span><span class="ref-meta">${esc(row.kingdom || row.organism_type || '')}</span>${organismBadge(row)}<span class="arrow">›</span></button>`;
+        return `<button class="catalog-row${active}" type="button" aria-pressed="${Boolean(active)}" data-code="${esc(row.whonet_code)}"><span class="ref-code">${esc(row.whonet_code)}</span><span class="ref-name"><strong><i>${esc(row.organism)}</i></strong><small>${esc([row.genus,row.family].filter(Boolean).join(' · '))}</small></span><span class="ref-meta">${esc(row.kingdom || row.organism_type || '')}</span>${organismBadge(row)}<span class="arrow">›</span></button>`;
       }
       const displayName = state.language === 'ru' ? (row.name_ru || row.antimicrobial) : state.language === 'kk' ? (row.name_kk || row.antimicrobial) : (row.name_en || row.antimicrobial);
-      return `<button class="catalog-row${active}" type="button" data-code="${esc(row.whonet_code)}"><span class="ref-code">${esc(row.whonet_code)}</span><span class="ref-name"><strong>${esc(displayName)}</strong><small>${esc(row.antimicrobial)}</small></span><span class="ref-meta">${esc(row.class_name || row.profile_class || '')}</span>${antimicrobialBadge(row)}<span class="arrow">›</span></button>`;
+      return `<button class="catalog-row${active}" type="button" aria-pressed="${Boolean(active)}" data-code="${esc(row.whonet_code)}"><span class="ref-code">${esc(row.whonet_code)}</span><span class="ref-name"><strong>${esc(displayName)}</strong><small>${esc(row.antimicrobial)}</small></span><span class="ref-meta">${esc(row.class_name || row.profile_class || '')}</span>${antimicrobialBadge(row)}<span class="arrow">›</span></button>`;
     }).join('');
     $$('.catalog-row').forEach(button => button.addEventListener('click', () => {
       state.selected = state.rows.find(row => row.whonet_code === button.dataset.code) || null;
       renderList();
       renderDetail();
+      els.detail.scrollTop=0;
+      document.getElementById('catalog-workspace').classList.add('show-detail');
+      if(matchMedia('(max-width:760px)').matches){els.detail.focus({preventScroll:true});document.getElementById('back-to-catalog').scrollIntoView({block:'start'});}
+      else document.querySelector(`.catalog-row[data-code="${CSS.escape(button.dataset.code)}"]`)?.focus({preventScroll:true});
     }));
   }
 
@@ -229,7 +241,8 @@
     state.tab = tab; state.page = 1; state.search = ''; state.selected = null;
     els.search.value = '';
     configureFilters(true);
-    $$('[data-tab]').forEach(button => button.classList.toggle('active', button.dataset.tab === tab));
+    $$('[data-tab]').forEach(button => {button.classList.toggle('active', button.dataset.tab === tab);button.setAttribute('aria-pressed',String(button.dataset.tab===tab));});
+    document.getElementById('catalog-workspace').classList.remove('show-detail');
     const url = new URL(location.href); url.searchParams.set('tab', tab); history.replaceState(null, '', url);
     await loadCatalog();
   }
@@ -248,8 +261,10 @@
   $$('[data-tab]').forEach(button => button.addEventListener('click', () => switchTab(button.dataset.tab)));
   $$('[data-lang]').forEach(button => button.addEventListener('click', () => { state.language = button.dataset.lang; applyLanguage(); }));
 
+  document.addEventListener('atlas:language-changed',event=>{const language=event.detail?.language;if(['ru','kk','en'].includes(language)){state.language=language;applyLanguage();}});
+  document.getElementById('back-to-catalog').addEventListener('click',()=>{document.getElementById('catalog-workspace').classList.remove('show-detail');document.querySelector('.catalog-row.active')?.focus();});
   configureFilters(true);
-  $$('[data-tab]').forEach(button => button.classList.toggle('active', button.dataset.tab === state.tab));
+  $$('[data-tab]').forEach(button => {button.classList.toggle('active', button.dataset.tab === state.tab);button.setAttribute('aria-pressed',String(button.dataset.tab===state.tab));});
   applyLanguage();
   loadCatalog();
 })();

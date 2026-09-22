@@ -1,11 +1,15 @@
+import {renderHeader} from './atlas-shell.mjs?v=20260922-1';
 import {organisms, materials, pcodes, cityCodes, normalise, regionName, drugName, materialName, profile, regionsFor, antibioticsFor, specimensFor, trendFor, exportRows, toCsv, MIN_N, MODEL_VERSION, YEARS} from './atlas-model.mjs?v=20260920-2';
-import {text} from './atlas-copy.mjs?v=20260920-2';
+import {text} from './atlas-copy.mjs?v=20260922-1';
 
 const app=document.getElementById('atlas-app');
 const dialog=document.getElementById('info-dialog');
 let geometry=[], mapFailed=false, mapReady=false, showNames=false;
 let state=readState(), lang=readLanguage();
 let zoom=1, viewBox=null, drag=null, dragged=false;
+let activePanel='overview', previewRegion=null, regionQuery='';
+let compact=false;
+try { compact=localStorage.getItem('atlas-compact')==='true'; } catch {}
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const t=key=>text(key,lang);
 const locale=()=>lang==='kk'?'kk-KZ':lang==='en'?'en-GB':'ru-RU';
@@ -14,7 +18,7 @@ const dec=v=>v===null?'—':Number(v).toLocaleString(locale(),{minimumFractionDi
 const pct=v=>v===null?'—':`${dec(v)}%`;
 const pname=code=>regionName(code,lang);
 const date=value=>new Date(`${value}T12:00:00Z`).toLocaleDateString(locale(),{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'UTC'});
-const periodLabel=year=>year==='2026'?'2026 · YTD':year;
+const periodLabel=year=>year==='2026'?`2026 · ${t('yearToDate')}`:year;
 const icon=(name,size=18)=>`<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${({arrow:'<path d="M5 12h14m-5-5 5 5-5 5"/>',back:'<path d="M19 12H5m5-5-5 5 5 5"/>',download:'<path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4"/>',map:'<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Zm6-3v15m6-12v15"/>',book:'<path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1Zm0 0v15"/>',shield:'<path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/>',globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-6 6-6 12 0 18 6-6 6-12 0-18Z"/>',lab:'<path d="M9 3h6m-5 0v7L4 20h16l-6-10V3M7 15h10"/>',chart:'<path d="M4 3v17h17M8 15l4-6 4 3 5-7"/>',search:'<circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/>',chevron:'<path d="m9 5 7 7-7 7"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.1"/>'})[name]||''}</svg>`;
 function readLanguage(){try {const saved=localStorage.getItem('atlas-preview-language');return ['ru','kk','en'].includes(saved)?saved:'ru';}catch{return 'ru';}}
 function readState(){return normalise(Object.fromEntries(new URLSearchParams(location.search)));}
@@ -25,7 +29,7 @@ function color(p){return {low:'#79d9ba',moderate:'#39b9b0',elevated:'#419bc0',hi
 function nText(p){return p.status==='suppressed'?'<30':fmt(p.n);}
 function ciText(p){return p.ci?`${dec(p.ci.low)}–${dec(p.ci.high)}%`:t(p.status==='suppressed'?'suppressed':'unavailable');}
 function option(value,label,current){return `<option value="${safe(value)}" ${value===current?'selected':''}>${safe(label)}</option>`;}
-function header(){return `<header class="site-header"><a class="brand" href="./index.html" data-home><img src="./atlas-mark.svg" width="42" height="42" alt=""><span><b>AMR<span>Atlas</span></b><small>${t('brand')}</small></span></a><nav aria-label="AMR Atlas"><a class="active" href="./index.html" data-home>${icon('map')}${t('mapNav')}</a><a href="./reference.html">${icon('book')}${t('reference')}</a><button data-info>${t('methodology')}</button></nav><div class="language-switch" role="group" aria-label="Language / Тіл / Язык">${['ru','kk','en'].map(l=>`<button data-language="${l}" lang="${l}" aria-pressed="${lang===l}">${{ru:'RU',kk:'ҚАЗ',en:'EN'}[l]}</button>`).join('')}</div></header>`;}
+function header(){return renderHeader(lang,'index');}
 function filters(){return `<form class="filters" aria-label="${t('sample')}"><label>${t('organism')}<select id="filter-organism" data-filter="organism">${Object.values(organisms).map(o=>option(o.code,o.name,state.organism)).join('')}</select></label><label>${t('drug')}<select id="filter-drug" data-filter="drug">${Object.keys(organisms[state.organism].drugs).map(d=>option(d,drugName(d,lang),state.drug)).join('')}</select></label><label>${t('material')}<select id="filter-material" data-filter="material">${Object.keys(materials).map(m=>option(m,materialName(m,lang),state.material)).join('')}</select></label><label>${t('period')}<select id="filter-year" data-filter="year">${YEARS.slice().reverse().map(y=>option(y,periodLabel(y),state.year)).join('')}</select></label><label>${t('territory')}<select id="filter-region" data-filter="region">${option('KZ',t('allRegions'),state.region)}${sortedCodes().map(c=>option(c,pname(c),state.region)).join('')}</select></label></form>`;}
 function sortedCodes(){return [...pcodes].sort((a,b)=>pname(a).localeCompare(pname(b),locale()));}
 function metric(label,value,note,ico,klass=''){return `<article class="metric ${klass}"><div class="metric-label">${icon(ico)}<span>${label}</span></div><strong>${value}</strong><small>${note}</small></article>`;}
@@ -35,18 +39,20 @@ function render(){
   const p=profile(state), national=profile({...state,region:'KZ'}), regional=state.region!=='KZ';
   document.documentElement.lang=lang;document.title=`${pname(state.region)} · AMR Atlas`;
   document.querySelector('.skip-link').textContent=t('skip');
-  app.innerHTML=`${header()}<main id="main" class="main"><div class="demo-notice">${icon('info',17)}<span><b>${t('demo')}.</b> ${t('notice')}</span><button data-info>${t('learn')}${icon('arrow',16)}</button></div>
+  app.innerHTML=`${header()}<main id="main" class="main ${compact?'is-compact':''}"><div class="demo-notice">${icon('info',17)}<span><b>${t('demo')}.</b> ${t('notice')}</span><button data-info>${t('learn')}${icon('arrow',16)}</button></div>
     <section class="page-heading"><div>${regional?`<a href="./index.html" class="back-link" data-home>${icon('back',16)}${t('home')}</a>`:`<div class="eyebrow">${t('eyebrow')}</div>`}<h1 tabindex="-1">${regional?pname(state.region):t('countryTitle')}</h1><p>${t(regional?'regionSubtitle':'countrySubtitle')}</p></div><button class="export-button" id="export">${icon('download')}${t('export')}</button></section>
     ${filters()}${metrics(p)}<section class="geography ${regional?'is-region':''}" aria-label="${t('mapNav')}"><article class="map-card"><div class="map-heading"><div><span class="eyebrow">${regional?pname(state.region):t('allRegions')}</span><h2>${t(regional?'regionMap':'mapTitle')}</h2><p>${t(regional?'mapRegionHint':'mapHint')}</p></div>${!regional?`<div class="map-switch" role="group" aria-label="${t('mapNav')}"><button data-labels="values" aria-pressed="${!showNames}">${t('showNumbers')}</button><button data-labels="names" aria-pressed="${showNames}">${t('showNames')}</button></div>`:`<span class="map-code">${state.region}</span>`}</div>
     <div class="map-stage" id="map-stage">${renderMap()}<div class="compass" aria-hidden="true"><span>${t('north')}</span><svg viewBox="0 0 24 38"><path d="M12 3 20 30 12 25 4 30Z" fill="none" stroke="currentColor"/><path d="M12 3v22l-8 5Z" fill="currentColor"/></svg></div><div class="map-tooltip" id="map-tooltip" hidden></div>${regional&&mapReady?miniMap():''}${mapReady?`<div class="zoom-controls"><button data-zoom="in" aria-label="${t('zoomIn')}">+</button><button data-zoom="out" aria-label="${t('zoomOut')}">−</button><button data-zoom="reset" aria-label="${t('resetZoom')}">⤢</button></div><span class="pan-hint" id="pan-hint" hidden>${t('zoomHint')}</span>`:''}</div>
     <div class="map-bottom"><div class="legend"><span>${t('scale')}</span><b><i class="low"></i>&lt;10</b><b><i class="moderate"></i>10–&lt;25</b><b><i class="elevated"></i>25–&lt;50</b><b><i class="high"></i>≥50</b><b><i class="missing"></i>N&lt;30</b></div><p>${t('neutralScale')}</p><small>${t('mapSource')} · <a href="https://github.com/galymorg/new_qazaqstan_GeoJSON" target="_blank" rel="noopener noreferrer">geokz ↗</a></small></div></article>
-    ${regional?regionalSummary(p,national):regionList()}</section>
+    <div id="region-panel">${regional?regionalSummary(p,national):previewRegion?regionPreview():regionList()}</div></section>
     <section class="section-heading"><div><span class="eyebrow">${organisms[state.organism].short} · ${safe(drugName(state.drug,lang))} · ${safe(materialName(state.material,lang))}</span><h2>${t('overview')}</h2></div><span class="period-stamp">${date(p.period.start)} — ${date(p.period.end)}</span></section>
-    <div class="detail-grid">${antibioticTable()}${trendCard()}</div><div class="detail-grid secondary-grid">${specimenTable()}${provenance(p)}</div>
+    ${analytics()}
     <div class="precision-note">${icon('shield')}<p>${t('precision')}</p></div>
-    <footer class="site-footer"><div><b>AMR Atlas</b><span>${t('notClinical')}</span></div><div><button data-info>${t('legal')}</button><a href="./clinical-preview.html">${t('legacy')}${icon('arrow',14)}</a></div></footer></main>`;
+    <footer class="site-footer"><div><b>AMR Atlas</b><span>${t('notClinical')}</span></div><div><button data-info>${t('legal')}</button></div></footer></main>`;
   document.querySelector('form.filters').addEventListener('submit',e=>e.preventDefault());
   bindMap();
+  filterRegions();
+  if(previewRegion)document.querySelectorAll('#territory-map [data-region]').forEach(el=>el.classList.toggle('is-selected',el.dataset.region===previewRegion));
   if(focused)document.getElementById(focused)?.focus({preventScroll:true});
 }
 function renderMap(){
@@ -56,7 +62,7 @@ function renderMap(){
   return `<svg id="territory-map" viewBox="-5 -12 630 350" role="group" aria-label="${regional?pname(state.region):t('allRegions')}" preserveAspectRatio="xMidYMid meet"><defs><filter id="region-glow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#70ffe6" flood-opacity=".7"/></filter><linearGradient id="map-sheen" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#afffec" stop-opacity=".25"/><stop offset="1" stop-color="#122f43" stop-opacity=".2"/></linearGradient><pattern id="no-sample" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#41606e"/><path d="M0 0 6 6" stroke="#6d8b94" stroke-width="1"/></pattern></defs><g id="territory-shapes">${shapes.map(g=>{const p=profile({...state,region:g.pcode});return `<path class="territory ${regional?'territory-detail':''}" d="${safe(g.path)}" fill="${p.rate===null?'url(#no-sample)':color(p)}" data-region="${g.pcode}" ${regional?'':`tabindex="0" role="button" aria-label="${safe(pname(g.pcode))} · ${p.rate===null?t('suppressed'):pct(p.rate)} · ${t('focusRegion')}"`}><title>${safe(pname(g.pcode))} · ${pct(p.rate)}</title></path>`;}).join('')}</g>${!regional?`<g class="map-labels ${showNames?'names':'values'}" aria-hidden="true">${geometry.filter(g=>!cityCodes.includes(g.pcode)).map(g=>{const p=profile({...state,region:g.pcode});const short=pname(g.pcode).replace(/ область| Region/g,'').replace(/^Область /,'').replace('Северо-Казахстанская','Сев. Казахстан').replace('Западно-Казахстанская','Зап. Казахстан').replace('Восточно-Казахстанская','Вост. Казахстан');return `<text x="${g.cx}" y="${g.cy}">${safe(showNames?short:pct(p.rate))}</text>`;}).join('')}</g><g class="city-markers">${geometry.filter(g=>cityCodes.includes(g.pcode)).map(g=>{const p=profile({...state,region:g.pcode});const left=g.pcode==='KZ75',dx=left?-14:13,dy=g.pcode==='KZ79'?14:9;return `<g class="city-marker" data-region="${g.pcode}" role="button" tabindex="0" aria-label="${pname(g.pcode)} · ${pct(p.rate)} · ${t('focusRegion')}"><circle class="city-halo" cx="${g.cx}" cy="${g.cy}" r="6"/><circle cx="${g.cx}" cy="${g.cy}" r="2.5"/><path d="M${g.cx} ${g.cy}l${dx} ${dy}"/><text x="${g.cx+dx+(left?-2:2)}" y="${g.cy+dy+2}" text-anchor="${left?'end':'start'}">${pname(g.pcode)}</text></g>`;}).join('')}</g>`:''}</svg>`;
 }
 function miniMap(){return `<div class="mini-map"><span>${t('location')}</span><svg viewBox="-5 -12 630 350" role="img" aria-label="${t('location')}: ${pname(state.region)}">${geometry.map(g=>`<path d="${safe(g.path)}" fill="${g.pcode===state.region?'#78ebd4':'#284b59'}"/>`).join('')}${cityCodes.includes(state.region)?geometry.filter(g=>g.pcode===state.region).map(g=>`<circle cx="${g.cx}" cy="${g.cy}" r="8" fill="#78ebd4"/>`).join(''):''}</svg></div>`;}
-function regionList(){return `<aside class="region-sidebar"><div class="list-heading"><h2>${t('regions')} <span>20</span></h2><p>${t('alphabetical')}</p><label class="region-search">${icon('search',17)}<input id="region-search" type="search" placeholder="${t('search')}" aria-label="${t('search')}" autocomplete="off"></label></div><div class="region-list" id="region-list">${sortedCodes().map(code=>{const p=profile({...state,region:code});return `<button class="region-row" data-open-region="${code}"><i style="--region-color:${color(p)}"></i><span>${pname(code)}<small>N ${nText(p)}</small></span><b>${pct(p.rate)}</b>${icon('chevron',14)}</button>`;}).join('')}</div><p class="empty-search" id="empty-search" hidden>${t('emptySearch')}</p><div class="list-footer">${icon('shield',14)}${t('demo')}</div></aside>`;}
+function regionList(){return `<aside class="region-sidebar"><div class="list-heading"><h2>${t('regions')} <span>20</span></h2><p>${t('alphabetical')}</p><label class="region-search">${icon('search',17)}<input id="region-search" type="search" value="${safe(regionQuery)}" placeholder="${t('search')}" aria-label="${t('search')}" autocomplete="off"></label></div><div class="region-list" id="region-list">${sortedCodes().map(code=>{const p=profile({...state,region:code});return `<button class="region-row" data-open-region="${code}"><i style="--region-color:${color(p)}"></i><span>${pname(code)}<small>N ${nText(p)}</small></span><b>${pct(p.rate)}</b>${icon('chevron',14)}</button>`;}).join('')}</div><p class="empty-search" id="empty-search" hidden>${t('emptySearch')}</p><div class="list-footer">${icon('shield',14)}${t('demo')}</div></aside>`;}
 function regionalSummary(p,national){
   const delta=p.rate!==null&&national.rate!==null?p.rate-national.rate:null;
   return `<aside class="region-summary"><article class="card distribution"><span class="eyebrow">${state.drug} · ${periodLabel(state.year)}</span><h2>${t('distribution')}</h2><p>${t('distributionNote')}</p>${p.rate!==null?`<div class="sir-chart" role="img" aria-label="S ${pct(p.sRate)}, I ${pct(p.iRate)}, R ${pct(p.rate)}" style="--s:${p.sRate}%;--si:${p.sRate+p.iRate}%"><div><strong>${pct(p.rate)}</strong><span>R / N</span></div></div>`:`<div class="suppressed-state">${icon('shield',28)}${t('suppressed')}</div>`}<div class="sir-legend">${[['s','sRate','s'],['i','iRate','i'],['r','rate','r']].map(([key,rate,count])=>`<div><i class="sir-${key}"></i><span>${t(key)}</span><b>${pct(p[rate])}<small>${fmt(p[count])}</small></b></div>`).join('')}</div><small class="muted">${t('euNote')}</small></article><article class="comparison"><span>${t('countryBaseline')}</span><strong>${pct(national.rate)} <small>${t('allRegions')}</small></strong><p>${delta===null?'—':`${dec(Math.abs(delta))} ${t('pp')} ${t(Math.abs(delta)<.05?'equal':delta>0?'above':'below')}`}</p><small>${t('sameCohort')}. ${t('noRanking')}</small></article></aside>`;
@@ -68,7 +74,7 @@ function trendCard(){const data=trendFor(state), max=100, height=145, y=v=>175-v
 function specimenTable(){return `<article class="card table-card"><div class="card-heading"><h2>${t('allSpecimens')}</h2><p>${t('allSpecimensNote')}</p></div><div class="table-scroll"><table><thead><tr><th scope="col">${t('material')}</th><th scope="col">N</th><th scope="col">R, %</th><th scope="col">${t('ci')}</th></tr></thead><tbody>${specimensFor(state).map(p=>`<tr><th scope="row">${materialName(p.material,lang)}</th><td>${nText(p)}</td><td><b>${pct(p.rate)}</b></td><td>${ciText(p)}</td></tr>`).join('')}</tbody></table></div><p class="table-footnote">${t('noPooling')}</p></article>`;}
 function provenance(p){return `<article class="card provenance"><div class="card-heading"><h2>${icon('shield',18)}${t('passport')}</h2><p>${t('demo')}</p></div><dl>${[['source','sourceValue'],['indicator','indicatorValue'],['confidence','confidenceValue'],['dedup','dedupValue']].map(([label,value])=>`<div><dt>${t(label)}</dt><dd>${t(value)}</dd></div>`).join('')}<div><dt>${t('version')}</dt><dd>${MODEL_VERSION}</dd></div><div><dt>${t('period')}</dt><dd>${date(p.period.start)} — ${date(p.period.end)}</dd></div></dl><div class="availability"><b>${t('quality')}</b><p>${t('qualityValue')}</p></div></article>`;}
 function openInfo(){dialog.innerHTML=`<div class="dialog-heading"><div><span class="eyebrow">AMR ATLAS · KAZAKHSTAN</span><h2 id="dialog-title">${t('lawTitle')}</h2></div><button data-close aria-label="${t('close')}">×</button></div><div class="dialog-content"><p>${t('publicRule')}</p><h3>${t('methodology')}</h3><p>${t('indicatorValue')} · ${t('confidenceValue')}.</p><p>${t('precision')}</p><p>${t('euNote')} ${t('dedupValue')}</p><h3>${t('legal')}</h3><p>${t('lawPersonal')}</p><a href="https://adilet.zan.kz/rus/docs/Z1300000094" target="_blank" rel="noopener noreferrer">${t('lawLink')}</a><p>${t('lawHealth')}</p><a href="https://adilet.zan.kz/rus/docs/K2000000360" target="_blank" rel="noopener noreferrer">${t('codeLink')}</a><h3>${t('beforeLive')}</h3><p>${t('liveRule')}</p><p>${t('storage')}</p><small>${t('legalDate')}</small></div><div class="dialog-footer">${t('notClinical')}<button data-close>${t('close')}</button></div>`;dialog.showModal();}
-function navigate(region){if(!pcodes.includes(region)&&region!=='KZ')return;const changed=state.region!==region;state={...state,region};zoom=1;if(changed)writeUrl(true);render();window.scrollTo({top:0,behavior:'instant'});document.querySelector('h1').focus({preventScroll:true});announce(pname(region));}
+function navigate(region){if(!pcodes.includes(region)&&region!=='KZ')return;previewRegion=null;const changed=state.region!==region;state={...state,region};zoom=1;if(changed)writeUrl(true);render();window.scrollTo({top:0,behavior:'instant'});document.querySelector('h1').focus({preventScroll:true});announce(pname(region));}
 function update(patch){state=normalise({...state,...patch});writeUrl();render();announce(`${pname(state.region)} · ${organisms[state.organism].name} · ${drugName(state.drug,lang)}`);}
 async function loadMap(){mapFailed=false;mapReady=false;render();try{const res=await fetch('./regions.json',{cache:'no-cache'});if(!res.ok)throw Error('Map unavailable');const data=await res.json();if(!Array.isArray(data)||data.length!==20||new Set(data.map(g=>g.pcode)).size!==20||!data.every(g=>pcodes.includes(g.pcode)&&typeof g.path==='string'&&/^[MmLlHhVvCcSsQqTtAaZz\d\s.,+eE-]+$/.test(g.path)&&Number.isFinite(g.cx)&&Number.isFinite(g.cy)))throw Error('Invalid local geometry');geometry=data;mapReady=true;}catch{mapFailed=true;}render();}
 function bindMap(){
@@ -79,7 +85,7 @@ function bindMap(){
   svg.addEventListener('pointerleave',hideTooltip);
   svg.addEventListener('focusin',e=>{const shape=e.target.closest('[data-region]');if(shape&&state.region==='KZ')showTooltip(shape.dataset.region,shape);});
   svg.addEventListener('focusout',hideTooltip);
-  svg.addEventListener('keydown',e=>{const shape=e.target.closest('[data-region]');if(shape&&state.region==='KZ'&&['Enter',' '].includes(e.key)){e.preventDefault();navigate(shape.dataset.region);}});
+  svg.addEventListener('keydown',e=>{const shape=e.target.closest('[data-region]');if(shape&&state.region==='KZ'&&['Enter',' '].includes(e.key)){e.preventDefault();preview(shape.dataset.region);}});
   svg.addEventListener('pointerdown',e=>{dragged=false;if(zoom<=1||e.button!==0)return;const matrix=svg.getScreenCTM();if(!matrix)return;drag={x:e.clientX,y:e.clientY,box:svg.getAttribute('viewBox').split(' ').map(Number),scale:matrix.a,pointerId:e.pointerId};});
   svg.addEventListener('pointermove',e=>{if(!drag)return;const dx=(e.clientX-drag.x)/drag.scale,dy=(e.clientY-drag.y)/drag.scale;if(Math.abs(e.clientX-drag.x)+Math.abs(e.clientY-drag.y)>4){dragged=true;if(!svg.hasPointerCapture(drag.pointerId))svg.setPointerCapture(drag.pointerId);}if(!dragged)return;const [x,y,w,h]=drag.box;svg.setAttribute('viewBox',`${Math.max(viewBox.x,Math.min(viewBox.x+viewBox.w-w,x-dx))} ${Math.max(viewBox.y,Math.min(viewBox.y+viewBox.h-h,y-dy))} ${w} ${h}`);});
   svg.addEventListener('pointerup',()=>{drag=null;});svg.addEventListener('pointercancel',()=>{drag=null;});
@@ -90,8 +96,12 @@ function hideTooltip(){document.querySelectorAll('.territory.hovered').forEach(e
 app.addEventListener('click',e=>{
   const el=e.target.closest('button,a,[data-region]');if(!el)return;
   if(el.hasAttribute('data-home')){e.preventDefault();navigate('KZ');}
-  else if(el.dataset.openRegion)navigate(el.dataset.openRegion);
-  else if(el.dataset.region&&state.region==='KZ'&&!dragged)navigate(el.dataset.region);
+  else if(el.dataset.openRegion)preview(el.dataset.openRegion);
+  else if(el.dataset.region&&state.region==='KZ'&&!dragged)preview(el.dataset.region);
+  else if(el.hasAttribute('data-dismiss-preview'))dismissPreview();
+  else if(el.dataset.fullRegion)navigate(el.dataset.fullRegion);
+  else if(el.dataset.panel){activePanel=el.dataset.panel;render();document.getElementById(`tab-${activePanel}`).focus({preventScroll:true});}
+  else if(el.hasAttribute('data-density')){compact=!compact;try{localStorage.setItem('atlas-compact',compact);}catch{}render();document.getElementById('density-toggle').focus({preventScroll:true});}
   else if(el.hasAttribute('data-info'))openInfo();
   else if(el.dataset.language){lang=el.dataset.language;try{localStorage.setItem('atlas-preview-language',lang);}catch{}render();}
   else if(el.dataset.drug)update({drug:el.dataset.drug});
@@ -101,9 +111,50 @@ app.addEventListener('click',e=>{
   else if(el.id==='export'){const blob=new Blob([toCsv(exportRows(state,lang))],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`AMR-Atlas-DEMO-${state.region}-${state.organism}-${state.drug}-${state.year}.csv`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);announce(t('csvReady'));}
 });
 app.addEventListener('change',e=>{const key=e.target.dataset.filter;if(!key)return;if(key==='region')navigate(e.target.value);else update({[key]:e.target.value});});
-app.addEventListener('input',e=>{if(e.target.id!=='region-search')return;const query=e.target.value.trim().toLocaleLowerCase(locale());let count=0;document.querySelectorAll('[data-open-region]').forEach(el=>{el.hidden=!pname(el.dataset.openRegion).toLocaleLowerCase(locale()).includes(query);if(!el.hidden)count++;});document.getElementById('empty-search').hidden=count>0;});
+app.addEventListener('input',e=>{if(e.target.id==='region-search'){regionQuery=e.target.value;filterRegions();}});
 app.addEventListener('pointerover',e=>{const row=e.target.closest('[data-open-region]');if(row){const shape=document.querySelector(`.territory[data-region="${row.dataset.openRegion}"]`);showTooltip(row.dataset.openRegion,shape);}});
 app.addEventListener('pointerout',e=>{if(e.target.closest('[data-open-region]'))hideTooltip();});
 dialog.addEventListener('click',e=>{if(e.target.closest('[data-close]')||e.target===dialog)dialog.close();});
-window.addEventListener('popstate',()=>{state=readState();zoom=1;render();window.scrollTo({top:0,behavior:'instant'});});
+window.addEventListener('popstate',()=>{state=readState();previewRegion=null;zoom=1;render();window.scrollTo({top:0,behavior:'instant'});});
 loadMap();
+
+function filterRegions(){
+  const query=regionQuery.trim().toLocaleLowerCase(locale());let count=0;
+  document.querySelectorAll('[data-open-region]').forEach(el=>{el.hidden=!pname(el.dataset.openRegion).toLocaleLowerCase(locale()).includes(query);if(!el.hidden)count++;});
+  const empty=document.getElementById('empty-search');if(empty)empty.hidden=count>0;
+}
+function regionPreview(){
+  const p=profile({...state,region:previewRegion});
+  return `<aside class="region-preview" aria-labelledby="preview-title"><div class="preview-top"><span class="eyebrow">${t('quickView')}</span><button type="button" data-dismiss-preview aria-label="${t('close')}">×</button></div><h2 id="preview-title" tabindex="-1">${pname(previewRegion)}</h2><p class="preview-cohort">${organisms[state.organism].short} · ${safe(drugName(state.drug,lang))}</p><div class="preview-rate"><strong>${pct(p.rate)}</strong><span>${t('resistance')}</span></div><dl><div><dt>${t('tested')}</dt><dd>${nText(p)}</dd></div><div><dt>${t('ci')}</dt><dd>${ciText(p)}</dd></div><div><dt>${t('period')}</dt><dd>${periodLabel(state.year)}</dd></div></dl><p class="preview-note">${t('demo')}. ${t('noRanking')}</p><button class="primary-action" data-full-region="${previewRegion}">${t('openProfile')}${icon('arrow',16)}</button><button class="preview-back" data-dismiss-preview>${t('backToRegions')}</button></aside>`;
+}
+function preview(code){
+  if(!pcodes.includes(code))return;
+  previewRegion=code;hideTooltip();
+  document.getElementById('region-panel').innerHTML=regionPreview();
+  document.querySelectorAll('#territory-map [data-region]').forEach(el=>el.classList.toggle('is-selected',el.dataset.region===code));
+  document.getElementById('preview-title').focus({preventScroll:true});
+  if(matchMedia('(max-width:760px)').matches)document.getElementById('region-panel').scrollIntoView({block:'nearest'});
+  announce(pname(code));
+}
+function dismissPreview(){
+  const previous=previewRegion;previewRegion=null;
+  document.getElementById('region-panel').innerHTML=regionList();filterRegions();
+  document.querySelectorAll('#territory-map .is-selected').forEach(el=>el.classList.remove('is-selected'));
+  document.querySelector(`[data-open-region="${previous}"]`)?.focus({preventScroll:true});
+}
+function analytics(){
+  const panels=[['overview','analysisOverview'],['antibiotics','antibiotics'],['trend','trend'],['materials','allSpecimens'],['source','passport']];
+  const content=activePanel==='overview'?antibioticTable()+trendCard():activePanel==='antibiotics'?antibioticTable():activePanel==='trend'?trendCard():activePanel==='materials'?specimenTable():provenance(profile(state));
+  return `<section class="analytics-workspace"><div class="analysis-toolbar"><div class="analysis-tabs" role="tablist" aria-label="${t('overview')}">${panels.map(([id,label])=>`<button id="tab-${id}" type="button" role="tab" data-panel="${id}" aria-selected="${activePanel===id}" aria-controls="analysis-panel" tabindex="${activePanel===id?0:-1}">${t(label)}</button>`).join('')}</div><button id="density-toggle" class="density-toggle" data-density aria-pressed="${compact}">${t('compact')}</button></div><div id="analysis-panel" role="tabpanel" aria-labelledby="tab-${activePanel}" tabindex="0" class="analysis-content ${activePanel==='overview'?'analysis-overview':''}">${content}</div></section>`;
+}
+app.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&previewRegion){event.preventDefault();dismissPreview();return;}
+  const tab=event.target.closest('[role="tab"][data-panel]');if(!tab)return;
+  const tabs=[...app.querySelectorAll('[role="tab"][data-panel]')];let index=tabs.indexOf(tab);
+  if(event.key==='ArrowRight')index=(index+1)%tabs.length;
+  else if(event.key==='ArrowLeft')index=(index+tabs.length-1)%tabs.length;
+  else if(event.key==='Home')index=0;
+  else if(event.key==='End')index=tabs.length-1;
+  else return;
+  event.preventDefault();tabs[index].click();
+});
