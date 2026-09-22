@@ -7,7 +7,7 @@
   }
   function loadUnifiedShell(){
     if(!document.querySelector('link[data-atlas-unified]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./atlas-unified.css?v=20260921-4';style.dataset.atlasUnified='1';document.head.appendChild(style)}
-    if(!document.querySelector('script[data-atlas-module="unified-nav"]'))loadScript('./atlas-sections-nav.js?v=20260921-6','unified-nav');
+    if(!document.querySelector('script[data-atlas-module="unified-nav"]'))loadScript('./atlas-sections-nav.js?v=20260922-typography-1','unified-nav');
   }
   function loadGlobalI18n(){
     if(!document.querySelector('link[data-atlas-global-i18n]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./atlas-global-i18n.css?v=20260916-1';style.dataset.atlasGlobalI18n='1';document.head.appendChild(style)}
