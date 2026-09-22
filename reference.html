@@ -6,33 +6,33 @@
   <meta name="theme-color" content="#f4f8f7" />
   <title>AMR Atlas — справочник</title>
   <meta name="description" content="Справочник WHONET микроорганизмов и антимикробных препаратов в AMR Atlas" />
-  <link rel="icon" href="./atlas-mark.svg" type="image/svg+xml" />
+  <link rel="icon" href="./assets/branding/logo.png" type="image/png" />
   <link rel="stylesheet" href="./reference-static.css?v=20260921-2" />
   <link rel="stylesheet" href="./reference-amr.css?v=20260916-2" />
   <link rel="stylesheet" href="./atlas-shell.css?v=20260922-1" />
   <link rel="stylesheet" href="./assets/branding/branding.css?v=20260921-4" data-atlas-branding="1" />
   <link rel="stylesheet" href="./reference-workspace.css?v=20260922-1" />
   <link rel="stylesheet" href="./atlas-workspace.css?v=20260922-1" />
-  <script type="module" src="./atlas-shell.mjs?v=20260922-1"></script>
+  <script type="module" src="./atlas-shell.mjs?v=20260922-2"></script>
 </head>
 <body class="reference-page" data-workspace="reference">
   <a class="workspace-skip" href="#reference-search" data-i18n="skipSearch">Перейти к поиску</a>
-  <header class="site-header" data-atlas-unified-header="1">
+  <header class="site-header workspace-header" data-atlas-unified-header="1">
     <a class="brand" href="./index.html">
-      <img class="brand-symbol" src="./assets/branding/logo.png" width="48" height="48" decoding="async" fetchpriority="low" alt="" />
+      <img class="brand-symbol" src="./assets/branding/logo.png" width="44" height="44" decoding="async" fetchpriority="low" alt="" />
       <span class="brand-copy"><b>AMR <span>Atlas</span></b><small>Антимикробная резистентность</small></span>
     </a>
     <nav aria-label="AMR Atlas">
       <a href="./index.html">Казахстан</a>
       <a href="./world.html">Мир / WHO GLASS</a>
-      <a href="./reference.html" class="active">Справочник</a>
+      <a href="./reference.html" class="active" aria-current="page">Справочник</a>
       <a href="./mechanisms.html">Механизмы</a>
       <a href="./glossary.html">Словарь AMR</a>
     </nav>
-    <div class="language-switch" role="group" aria-label="Language / Тіл / Язык">
-      <button type="button" data-lang="ru" aria-pressed="true">RU</button>
-      <button type="button" data-lang="kk" aria-pressed="false">ҚАЗ</button>
-      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    <div class="language-switch" role="group" aria-label="Язык / Тіл / Language">
+      <button type="button" data-language="ru" lang="ru" aria-pressed="true">RU</button>
+      <button type="button" data-language="kk" lang="kk" aria-pressed="false">ҚАЗ</button>
+      <button type="button" data-language="en" lang="en" aria-pressed="false">EN</button>
     </div>
   </header>
 
@@ -83,13 +83,13 @@
 
       <div class="reference-detail-panel">
         <button id="back-to-catalog" class="back-to-catalog" type="button" data-i18n="backToCatalog">← К списку</button>
-      <aside class="reference-detail" id="reference-detail" tabindex="-1">
-        <div class="detail-empty">
-          <span>◎</span>
-          <strong data-i18n="selectRecord">Выберите запись</strong>
-          <p data-i18n="selectRecordText">Здесь появятся описание, классификация, коды и клиническая значимость.</p>
-        </div>
-      </aside>
+        <aside class="reference-detail" id="reference-detail" tabindex="-1">
+          <div class="detail-empty">
+            <span>◎</span>
+            <strong data-i18n="selectRecord">Выберите запись</strong>
+            <p data-i18n="selectRecordText">Здесь появятся описание, классификация, коды и клиническая значимость.</p>
+          </div>
+        </aside>
       </div>
     </section>
 
