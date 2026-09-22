@@ -7,7 +7,7 @@
   }
   function loadUnifiedShell(){
     if(!document.querySelector('link[data-atlas-unified]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./atlas-unified.css?v=20260921-4';style.dataset.atlasUnified='1';document.head.appendChild(style)}
-    if(!document.querySelector('script[data-atlas-module="unified-nav"]'))loadScript('./atlas-sections-nav.js?v=20260921-6','unified-nav');
+    if(!document.querySelector('script[data-atlas-module="unified-nav"]'))loadScript('./atlas-sections-nav.js?v=20260922-typography-1','unified-nav');
   }
   function loadGlobalI18n(){
     if(!document.querySelector('link[data-atlas-global-i18n]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./atlas-global-i18n.css?v=20260916-1';style.dataset.atlasGlobalI18n='1';document.head.appendChild(style)}
@@ -19,6 +19,10 @@
     if(!window.AtlasPlatformStatus)loadScript('./platform-status.js?v=20260916-1','platform-status',()=>window.AtlasPlatformStatus?.render?.());else window.AtlasPlatformStatus.render?.();
   }
   function loadReadableType(){
+    // Canonical pages load the shared typography layer explicitly. Move it to
+    // the end after dynamically injected shell styles so its scale stays final.
+    const typography=document.querySelector('link[href*="atlas-typography.css"]');
+    if(typography){document.head.appendChild(typography);return}
     if(!document.querySelector('link[data-atlas-readable]')){const style=document.createElement('link');style.rel='stylesheet';style.href='./atlas-readable-type.css?v=20260916-2';style.dataset.atlasReadable='1';document.head.appendChild(style)}
     if(document.body?.classList.contains('reference-page')&&!document.querySelector('link[data-atlas-reference-readable]')){const extra=document.createElement('link');extra.rel='stylesheet';extra.href='./atlas-readable-reference.css?v=20260916-1';extra.dataset.atlasReferenceReadable='1';document.head.appendChild(extra)}
   }

@@ -12,7 +12,13 @@
   function lang(){try{const v=localStorage.getItem('atlas-preview-language');return ['ru','kk','en'].includes(v)?v:'ru'}catch{return'ru'}}
   function currentPage(){const p=(location.pathname.split('/').pop()||'index.html').toLowerCase();return Object.entries(pages).find(([,file])=>file===p)?.[0]||'home'}
   function ensureStyle(selector,href,key){if(document.querySelector(selector))return;const l=document.createElement('link');l.rel='stylesheet';l.href=href;l.dataset[key]='1';document.head.appendChild(l)}
-  function loadCss(){ensureStyle('link[data-atlas-unified]','./atlas-unified.css?v=20260921-4','atlasUnified');ensureStyle('link[data-atlas-branding]','./assets/branding/branding.css?v=20260921-4','atlasBranding');ensureStyle('link[data-atlas-polish]','./atlas-polish.css?v=20260921-2','atlasPolish')}
+  function loadCss(){
+    ensureStyle('link[data-atlas-unified]','./atlas-unified.css?v=20260921-4','atlasUnified');
+    ensureStyle('link[data-atlas-branding]','./assets/branding/branding.css?v=20260921-4','atlasBranding');
+    ensureStyle('link[data-atlas-polish]','./atlas-polish.css?v=20260921-2','atlasPolish');
+    const typography=document.querySelector('link[href*="atlas-typography.css"]');
+    if(typography)document.head.appendChild(typography);else ensureStyle('link[data-atlas-typography]','./atlas-typography.css?v=20260922-1','atlasTypography');
+  }
   function ensureFavicons(){
     const href='./atlas-mark.svg';
     let iconLink=document.querySelector('link[data-atlas-favicon],link[rel="icon"]');
