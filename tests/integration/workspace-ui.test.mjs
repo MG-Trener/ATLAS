@@ -88,6 +88,8 @@ async function reference(){
 test('catalog switches language and type, and mobile detail returns to selected row',async()=>{
   const {dom,w,$,click,errors}=await reference();
   try{
+    const header=$('.site-header');
+    assert.ok(header.classList.contains('workspace-header'));
     assert.equal(w.document.querySelectorAll('.catalog-row').length,2);
     w.matchMedia=()=>({matches:true});
     click('[data-code="kpn"]');
@@ -97,12 +99,15 @@ test('catalog switches language and type, and mobile detail returns to selected 
     assert.equal($('#catalog-workspace').classList.contains('show-detail'),false);
     assert.equal(w.document.activeElement.dataset.code,'kpn');
     click('[data-language="en"]');
+    assert.equal($('.site-header'),header);
     assert.equal(w.document.documentElement.lang,'en');
     assert.equal(w.document.querySelector('h1').textContent,'AMR reference');
+    assert.equal(header.querySelector('nav a[aria-current="page"]').textContent,'Reference');
     click('[data-tab="antimicrobials"]');await flush();
     assert.match($('#reference-detail').textContent,/Ceftriaxone/);
     assert.equal($('[data-tab="antimicrobials"]').getAttribute('aria-pressed'),'true');
     click('[data-language="ru"]');
+    assert.equal($('.site-header'),header);
     assert.match($('#reference-detail').textContent,/Цефтриаксон/);
     assert.deepEqual(errors,[]);
   }finally{dom.window.close();}
