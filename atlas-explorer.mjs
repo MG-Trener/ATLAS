@@ -48,7 +48,7 @@ function render(){
     <section class="section-heading"><div><span class="eyebrow">${organisms[state.organism].short} · ${safe(drugName(state.drug,lang))} · ${safe(materialName(state.material,lang))}</span><h2>${t('overview')}</h2></div><span class="period-stamp">${date(p.period.start)} — ${date(p.period.end)}</span></section>
     ${analytics()}
     <div class="precision-note">${icon('shield')}<p>${t('precision')}</p></div>
-    <footer class="site-footer"><div><b>AMR Atlas</b><span>${t('notClinical')}</span></div><div><button data-info>${t('legal')}</button></div></footer></main>`;
+    <footer class="site-footer"><div><b>AMR Atlas</b><span>${t('notClinical')}</span><span class="atlas-author-credit">Автор разработки: <strong>Гаврилычев Михаил</strong></span></div><div><button data-info>${t('legal')}</button></div></footer></main>`;
   document.querySelector('form.filters').addEventListener('submit',e=>e.preventDefault());
   bindMap();
   filterRegions();
