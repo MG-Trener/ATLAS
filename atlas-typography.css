@@ -55,6 +55,12 @@ code,kbd,pre,.mechanism-code,.mechanism-card-code,.formula{font-family:var(--atl
 .section-page .term-card p,.section-page .callout,.section-page .country-list button{font-size:var(--atlas-type-body)!important}
 .section-page .meta-row span,.section-page .legend-row,.section-page .trend-column span{font-size:var(--atlas-type-secondary)!important}
 
+/* Development credit */
+.atlas-author-footer{margin-top:24px;padding:14px 0 4px;border-top:1px solid rgba(127,145,155,.25);font-size:var(--atlas-type-secondary)!important;line-height:1.5;color:inherit;opacity:.72}
+.atlas-author-footer strong,.atlas-author-credit strong{font-weight:650}
+.atlas-author-credit{font-size:var(--atlas-type-secondary)!important;line-height:1.4;opacity:.78}
+.site-footer .atlas-author-credit{display:block;margin-top:4px}
+
 @media(max-width:760px){
   :root{--atlas-type-body:14px;--atlas-type-control:13px;--atlas-type-secondary:12px;--atlas-type-caption:11px;--atlas-type-h1:28px;--atlas-type-h2:19px;--atlas-type-h3:16px}
 }
