@@ -30,6 +30,19 @@ body[data-workspace] .map-stage{height:350px!important;min-height:320px!importan
 body[data-workspace] .map-bottom{padding:10px 22px 14px!important}
 body[data-workspace] .map-bottom p{margin:7px 0 3px}
 #territory-map .is-selected{stroke:#fff;stroke-width:2;filter:drop-shadow(0 0 3px #fff8)}
+/* Detailed geographic basemap for a selected region. */
+.regional-geo-map{position:absolute;inset:0;overflow:hidden;background:#d9e6e5;touch-action:none;cursor:grab;user-select:none;outline:0}
+.regional-geo-map.is-dragging{cursor:grabbing}
+.geo-tile-layer{position:absolute;inset:0;will-change:transform}
+.geo-tile{position:absolute;width:256px;height:256px;max-width:none!important;object-fit:cover;pointer-events:none;user-select:none}
+.geo-map-badge{position:absolute;top:12px;left:12px;z-index:4;max-width:min(70%,420px);padding:8px 11px;border:1px solid #d7e2df;border-radius:8px;background:rgba(255,255,255,.94);box-shadow:0 5px 16px #173b4418;color:#23464c;font-size:12px;line-height:1.35;pointer-events:none}
+.geo-map-badge strong{display:block;font-size:13px}.geo-map-badge span{display:block;margin-top:2px;color:#637b82}
+.geo-map-controls{position:absolute;right:12px;top:12px;z-index:5;display:grid;overflow:hidden;border:1px solid #cfdcda;border-radius:8px;background:#fff;box-shadow:0 4px 14px #173b441c}
+.geo-map-controls button{width:38px;height:36px;border:0;border-bottom:1px solid #dde7e5;background:#fff;color:#23464c;font-size:18px;font-weight:650}.geo-map-controls button:last-child{border-bottom:0;font-size:15px}.geo-map-controls button:hover{background:#eef6f4}
+.geo-attribution{position:absolute;right:7px;bottom:6px;z-index:5;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.9);color:#536c72;font-size:10px;line-height:1.3}
+.geo-attribution a{color:#315f69;text-decoration:underline}
+.regional-geo-map~.compass{display:none!important}
+.regional-geo-map~.map-tooltip{display:none!important}
 #region-panel{min-width:0;display:flex;flex-direction:column}
 #region-panel>.region-sidebar{flex:1;min-height:0;height:510px;max-height:510px!important}
 .region-preview{background:#fff;border:1px solid var(--workspace-line);border-radius:12px;padding:20px;display:flex;flex-direction:column;height:100%;min-height:390px}
