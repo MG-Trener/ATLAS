@@ -41,7 +41,15 @@ test('region preview preserves country context; full profile and history remain 
     click('[data-region="KZ71"]');
     click('[data-full-region="KZ71"]');
     assert.equal($('#filter-region').value,'KZ71');
-    assert.equal(w.document.querySelectorAll('#territory-shapes path').length,1);
+    assert.ok($('#regional-geo-map'));
+    assert.equal($('#territory-map'),null);
+    assert.ok(w.document.querySelectorAll('.geo-tile').length>0);
+    assert.match($('.geo-attribution').textContent,/OpenStreetMap/);
+    const mapZoom=Number($('#regional-geo-map').dataset.zoom);
+    click('[data-geo-zoom="in"]');
+    assert.equal(Number($('#regional-geo-map').dataset.zoom),mapZoom+1);
+    click('[data-geo-zoom="reset"]');
+    assert.equal(Number($('#regional-geo-map').dataset.zoom),mapZoom);
     assert.match(w.location.search,/region=KZ71/);
     click('.brand[data-home]');
     assert.equal($('#filter-region').value,'KZ');
