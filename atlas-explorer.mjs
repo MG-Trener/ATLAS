@@ -1,6 +1,6 @@
 import {renderHeader} from './atlas-shell.mjs?v=20260922-1';
 import {organisms, materials, pcodes, cityCodes, normalise, regionName, drugName, materialName, profile, regionsFor, antibioticsFor, specimensFor, trendFor, exportRows, toCsv, MIN_N, MODEL_VERSION, YEARS} from './atlas-model.mjs?v=20260920-2';
-import {text} from './atlas-copy.mjs?v=20260922-1';
+import {text} from './atlas-copy.mjs?v=20260925-region-map-1';
 
 const app=document.getElementById('atlas-app');
 const dialog=document.getElementById('info-dialog');
@@ -9,7 +9,15 @@ let state=readState(), lang=readLanguage();
 let zoom=1, viewBox=null, drag=null, dragged=false;
 let activePanel='overview', previewRegion=null, regionQuery='';
 let compact=false;
+let geoView=null,geoDrag=null;
 try { compact=localStorage.getItem('atlas-compact')==='true'; } catch {}
+const regionalMapViews=Object.freeze({
+  KZ10:{lat:48.7,lon:80.2,zoom:7},KZ11:{lat:51.9,lon:69.3,zoom:7},KZ15:{lat:48.0,lon:58.5,zoom:6},KZ19:{lat:44.9,lon:78.2,zoom:7},
+  KZ23:{lat:47.1,lon:51.9,zoom:7},KZ27:{lat:50.1,lon:51.2,zoom:7},KZ31:{lat:43.5,lon:72.0,zoom:7},KZ33:{lat:45.0,lon:79.8,zoom:7},
+  KZ35:{lat:49.8,lon:73.1,zoom:6},KZ39:{lat:52.2,lon:64.1,zoom:7},KZ43:{lat:45.5,lon:64.0,zoom:6},KZ47:{lat:43.8,lon:52.3,zoom:7},
+  KZ55:{lat:52.3,lon:76.9,zoom:7},KZ59:{lat:54.8,lon:69.2,zoom:7},KZ61:{lat:43.3,lon:68.0,zoom:7},KZ62:{lat:48.0,lon:67.6,zoom:6},
+  KZ63:{lat:49.9,lon:83.4,zoom:7},KZ71:{lat:51.1694,lon:71.4491,zoom:10},KZ75:{lat:43.2389,lon:76.8897,zoom:10},KZ79:{lat:42.3155,lon:69.5869,zoom:10}
+});
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const t=key=>text(key,lang);
 const locale=()=>lang==='kk'?'kk-KZ':lang==='en'?'en-GB':'ru-RU';
@@ -42,8 +50,8 @@ function render(){
   app.innerHTML=`${header()}<main id="main" class="main ${compact?'is-compact':''}"><div class="demo-notice">${icon('info',17)}<span><b>${t('demo')}.</b> ${t('notice')}</span><button data-info>${t('learn')}${icon('arrow',16)}</button></div>
     <section class="page-heading"><div>${regional?`<a href="./index.html" class="back-link" data-home>${icon('back',16)}${t('home')}</a>`:`<div class="eyebrow">${t('eyebrow')}</div>`}<h1 tabindex="-1">${regional?pname(state.region):t('countryTitle')}</h1><p>${t(regional?'regionSubtitle':'countrySubtitle')}</p></div><button class="export-button" id="export">${icon('download')}${t('export')}</button></section>
     ${filters()}${metrics(p)}<section class="geography ${regional?'is-region':''}" aria-label="${t('mapNav')}"><article class="map-card"><div class="map-heading"><div><span class="eyebrow">${regional?pname(state.region):t('allRegions')}</span><h2>${t(regional?'regionMap':'mapTitle')}</h2><p>${t(regional?'mapRegionHint':'mapHint')}</p></div>${!regional?`<div class="map-switch" role="group" aria-label="${t('mapNav')}"><button data-labels="values" aria-pressed="${!showNames}">${t('showNumbers')}</button><button data-labels="names" aria-pressed="${showNames}">${t('showNames')}</button></div>`:`<span class="map-code">${state.region}</span>`}</div>
-    <div class="map-stage" id="map-stage">${renderMap()}<div class="compass" aria-hidden="true"><span>${t('north')}</span><svg viewBox="0 0 24 38"><path d="M12 3 20 30 12 25 4 30Z" fill="none" stroke="currentColor"/><path d="M12 3v22l-8 5Z" fill="currentColor"/></svg></div><div class="map-tooltip" id="map-tooltip" hidden></div>${regional&&mapReady?miniMap():''}${mapReady?`<div class="zoom-controls"><button data-zoom="in" aria-label="${t('zoomIn')}">+</button><button data-zoom="out" aria-label="${t('zoomOut')}">−</button><button data-zoom="reset" aria-label="${t('resetZoom')}">⤢</button></div><span class="pan-hint" id="pan-hint" hidden>${t('zoomHint')}</span>`:''}</div>
-    <div class="map-bottom"><div class="legend"><span>${t('scale')}</span><b><i class="low"></i>&lt;10</b><b><i class="moderate"></i>10–&lt;25</b><b><i class="elevated"></i>25–&lt;50</b><b><i class="high"></i>≥50</b><b><i class="missing"></i>N&lt;30</b></div><p>${t('neutralScale')}</p><small>${t('mapSource')} · <a href="https://github.com/galymorg/new_qazaqstan_GeoJSON" target="_blank" rel="noopener noreferrer">geokz ↗</a></small></div></article>
+    <div class="map-stage" id="map-stage">${renderMap()}<div class="compass" aria-hidden="true"><span>${t('north')}</span><svg viewBox="0 0 24 38"><path d="M12 3 20 30 12 25 4 30Z" fill="none" stroke="currentColor"/><path d="M12 3v22l-8 5Z" fill="currentColor"/></svg></div><div class="map-tooltip" id="map-tooltip" hidden></div>${regional&&mapReady?miniMap():''}undefined<button data-zoom="in" aria-label="${t('zoomIn')}">+</button><button data-zoom="out" aria-label="${t('zoomOut')}">−</button><button data-zoom="reset" aria-label="${t('resetZoom')}">⤢</button></div><span class="pan-hint" id="pan-hint" hidden>${t('zoomHint')}</span>`:''}</div>
+    ${regional?`<div class="map-bottom regional-map-bottom"><p>${t('geoMapHint')}</p><small>${t('geoMapSource')} · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors ↗</a> · ${t('mapSource')}</small></div>`:`<div class="map-bottom"><div class="legend"><span>${t('scale')}</span><b><i class="low"></i>&lt;10</b><b><i class="moderate"></i>10–&lt;25</b><b><i class="elevated"></i>25–&lt;50</b><b><i class="high"></i>≥50</b><b><i class="missing"></i>N&lt;30</b></div><p>${t('neutralScale')}</p><small>${t('mapSource')} · <a href="https://github.com/galymorg/new_qazaqstan_GeoJSON" target="_blank" rel="noopener noreferrer">geokz ↗</a></small></div>`}</article>
     <div id="region-panel">${regional?regionalSummary(p,national):previewRegion?regionPreview():regionList()}</div></section>
     <section class="section-heading"><div><span class="eyebrow">${organisms[state.organism].short} · ${safe(drugName(state.drug,lang))} · ${safe(materialName(state.material,lang))}</span><h2>${t('overview')}</h2></div><span class="period-stamp">${date(p.period.start)} — ${date(p.period.end)}</span></section>
     ${analytics()}
@@ -51,15 +59,56 @@ function render(){
     <footer class="site-footer"><div><b>AMR Atlas</b><span>${t('notClinical')}</span><span class="atlas-author-credit">Автор разработки: <strong>Гаврилычев Михаил</strong></span></div><div><button data-info>${t('legal')}</button></div></footer></main>`;
   document.querySelector('form.filters').addEventListener('submit',e=>e.preventDefault());
   bindMap();
+  if(regional)bindGeoMap();
   filterRegions();
   if(previewRegion)document.querySelectorAll('#territory-map [data-region]').forEach(el=>el.classList.toggle('is-selected',el.dataset.region===previewRegion));
   if(focused)document.getElementById(focused)?.focus({preventScroll:true});
 }
 function renderMap(){
+  const regional=state.region!=='KZ';
+  if(regional)return renderRegionalGeoMap();
   if(mapFailed)return `<div class="map-empty">${icon('map',40)}<p>${t('mapError')}</p><button data-retry>${t('retry')}</button></div>`;
   if(!mapReady)return `<div class="map-empty">${icon('globe',40)}<p>${t('mapLoading')}</p></div>`;
-  const regional=state.region!=='KZ', shapes=regional?geometry.filter(g=>g.pcode===state.region):geometry;
-  return `<svg id="territory-map" viewBox="-5 -12 630 350" role="group" aria-label="${regional?pname(state.region):t('allRegions')}" preserveAspectRatio="xMidYMid meet"><defs><filter id="region-glow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#70ffe6" flood-opacity=".7"/></filter><linearGradient id="map-sheen" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#afffec" stop-opacity=".25"/><stop offset="1" stop-color="#122f43" stop-opacity=".2"/></linearGradient><pattern id="no-sample" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#41606e"/><path d="M0 0 6 6" stroke="#6d8b94" stroke-width="1"/></pattern></defs><g id="territory-shapes">${shapes.map(g=>{const p=profile({...state,region:g.pcode});return `<path class="territory ${regional?'territory-detail':''}" d="${safe(g.path)}" fill="${p.rate===null?'url(#no-sample)':color(p)}" data-region="${g.pcode}" ${regional?'':`tabindex="0" role="button" aria-label="${safe(pname(g.pcode))} · ${p.rate===null?t('suppressed'):pct(p.rate)} · ${t('focusRegion')}"`}><title>${safe(pname(g.pcode))} · ${pct(p.rate)}</title></path>`;}).join('')}</g>${!regional?`<g class="map-labels ${showNames?'names':'values'}" aria-hidden="true">${geometry.filter(g=>!cityCodes.includes(g.pcode)).map(g=>{const p=profile({...state,region:g.pcode});const short=pname(g.pcode).replace(/ область| Region/g,'').replace(/^Область /,'').replace('Северо-Казахстанская','Сев. Казахстан').replace('Западно-Казахстанская','Зап. Казахстан').replace('Восточно-Казахстанская','Вост. Казахстан');return `<text x="${g.cx}" y="${g.cy}">${safe(showNames?short:pct(p.rate))}</text>`;}).join('')}</g><g class="city-markers">${geometry.filter(g=>cityCodes.includes(g.pcode)).map(g=>{const p=profile({...state,region:g.pcode});const left=g.pcode==='KZ75',dx=left?-14:13,dy=g.pcode==='KZ79'?14:9;return `<g class="city-marker" data-region="${g.pcode}" role="button" tabindex="0" aria-label="${pname(g.pcode)} · ${pct(p.rate)} · ${t('focusRegion')}"><circle class="city-halo" cx="${g.cx}" cy="${g.cy}" r="6"/><circle cx="${g.cx}" cy="${g.cy}" r="2.5"/><path d="M${g.cx} ${g.cy}l${dx} ${dy}"/><text x="${g.cx+dx+(left?-2:2)}" y="${g.cy+dy+2}" text-anchor="${left?'end':'start'}">${pname(g.pcode)}</text></g>`;}).join('')}</g>`:''}</svg>`;
+  const shapes=geometry;
+  return `<svg id="territory-map" viewBox="-5 -12 630 350" role="group" aria-label="${t('allRegions')}" preserveAspectRatio="xMidYMid meet"><defs><filter id="region-glow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#70ffe6" flood-opacity=".7"/></filter><linearGradient id="map-sheen" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#afffec" stop-opacity=".25"/><stop offset="1" stop-color="#122f43" stop-opacity=".2"/></linearGradient><pattern id="no-sample" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#41606e"/><path d="M0 0 6 6" stroke="#6d8b94" stroke-width="1"/></pattern></defs><g id="territory-shapes">${shapes.map(g=>{const p=profile({...state,region:g.pcode});return `<path class="territory" d="${safe(g.path)}" fill="${p.rate===null?'url(#no-sample)':color(p)}" data-region="${g.pcode}" tabindex="0" role="button" aria-label="${safe(pname(g.pcode))} · ${p.rate===null?t('suppressed'):pct(p.rate)} · ${t('focusRegion')}"><title>${safe(pname(g.pcode))} · ${pct(p.rate)}</title></path>`;}).join('')}</g><g class="map-labels ${showNames?'names':'values'}" aria-hidden="true">${geometry.filter(g=>!cityCodes.includes(g.pcode)).map(g=>{const p=profile({...state,region:g.pcode});const short=pname(g.pcode).replace(/ область| Region/g,'').replace(/^Область /,'').replace('Северо-Казахстанская','Сев. Казахстан').replace('Западно-Казахстанская','Зап. Казахстан').replace('Восточно-Казахстанская','Вост. Казахстан');return `<text x="${g.cx}" y="${g.cy}">${safe(showNames?short:pct(p.rate))}</text>`;}).join('')}</g><g class="city-markers">${geometry.filter(g=>cityCodes.includes(g.pcode)).map(g=>{const p=profile({...state,region:g.pcode});const left=g.pcode==='KZ75',dx=left?-14:13,dy=g.pcode==='KZ79'?14:9;return `<g class="city-marker" data-region="${g.pcode}" role="button" tabindex="0" aria-label="${pname(g.pcode)} · ${pct(p.rate)} · ${t('focusRegion')}"><circle class="city-halo" cx="${g.cx}" cy="${g.cy}" r="6"/><circle cx="${g.cx}" cy="${g.cy}" r="2.5"/><path d="M${g.cx} ${g.cy}l${dx} ${dy}"/><text x="${g.cx+dx+(left?-2:2)}" y="${g.cy+dy+2}" text-anchor="${left?'end':'start'}">${pname(g.pcode)}</text></g>`;}).join('')}</g></svg>`;
+}
+function currentGeoView(){
+  const config=regionalMapViews[state.region]||regionalMapViews.KZ35;
+  if(!geoView||geoView.region!==state.region)geoView={region:state.region,lat:config.lat,lon:config.lon,zoom:config.zoom};
+  return geoView;
+}
+function renderRegionalGeoMap(){
+  const view=currentGeoView();
+  return `<div class="regional-geo-map" id="regional-geo-map" tabindex="0" role="application" aria-label="${safe(pname(state.region))}: ${t('mapRegionHint')}" data-zoom="${view.zoom}"><div class="geo-tile-layer" id="geo-tile-layer" aria-hidden="true"></div><div class="geo-map-badge"><strong>${safe(pname(state.region))}</strong><span>${t('mapRegionHint')}</span></div><div class="geo-map-controls" role="group" aria-label="${t('regionMap')}"><button type="button" data-geo-zoom="in" aria-label="${t('zoomIn')}">+</button><button type="button" data-geo-zoom="out" aria-label="${t('zoomOut')}">−</button><button type="button" data-geo-zoom="reset" aria-label="${t('resetZoom')}">⌂</button></div><div class="geo-attribution">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors</div></div>`;
+}
+function geoWorld(lat,lon,z){
+  const n=256*2**z,clamped=Math.max(-85.05112878,Math.min(85.05112878,lat)),rad=clamped*Math.PI/180;
+  return [((lon+180)/360)*n,(1-Math.log(Math.tan(rad)+1/Math.cos(rad))/Math.PI)/2*n];
+}
+function geoLatLon(x,y,z){
+  const n=256*2**z,lon=x/n*360-180,merc=Math.PI*(1-2*y/n),lat=Math.atan(Math.sinh(merc))*180/Math.PI;
+  return [lat,lon];
+}
+function paintGeoMap(){
+  const map=document.getElementById('regional-geo-map'),layer=document.getElementById('geo-tile-layer');if(!map||!layer)return;
+  const view=currentGeoView(),z=view.zoom,n=2**z,width=map.clientWidth||820,height=map.clientHeight||350,[cx,cy]=geoWorld(view.lat,view.lon,z);
+  const minX=Math.floor((cx-width/2)/256)-1,maxX=Math.floor((cx+width/2)/256)+1,minY=Math.floor((cy-height/2)/256)-1,maxY=Math.floor((cy+height/2)/256)+1;
+  let html='';
+  for(let ty=minY;ty<=maxY;ty++){if(ty<0||ty>=n)continue;for(let tx=minX;tx<=maxX;tx++){const wrapped=((tx%n)+n)%n,left=Math.round(tx*256-(cx-width/2)),top=Math.round(ty*256-(cy-height/2));html+=`<img class="geo-tile" src="https://tile.openstreetmap.org/${z}/${wrapped}/${ty}.png" alt="" draggable="false" width="256" height="256" style="left:${left}px;top:${top}px">`;}}
+  layer.innerHTML=html;layer.style.transform='';map.dataset.zoom=String(z);
+}
+function bindGeoMap(){
+  const map=document.getElementById('regional-geo-map'),layer=document.getElementById('geo-tile-layer');if(!map||!layer)return;paintGeoMap();
+  map.addEventListener('pointerdown',e=>{if(e.button!==0||e.target.closest('button,a'))return;const view=currentGeoView();geoDrag={pointerId:e.pointerId,x:e.clientX,y:e.clientY,lat:view.lat,lon:view.lon,zoom:view.zoom};map.classList.add('is-dragging');map.setPointerCapture?.(e.pointerId);});
+  map.addEventListener('pointermove',e=>{if(!geoDrag||e.pointerId!==geoDrag.pointerId)return;layer.style.transform=`translate(${e.clientX-geoDrag.x}px,${e.clientY-geoDrag.y}px)`;});
+  const finish=e=>{if(!geoDrag||e.pointerId!==geoDrag.pointerId)return;const dx=e.clientX-geoDrag.x,dy=e.clientY-geoDrag.y,[sx,sy]=geoWorld(geoDrag.lat,geoDrag.lon,geoDrag.zoom),[lat,lon]=geoLatLon(sx-dx,sy-dy,geoDrag.zoom),view=currentGeoView();view.lat=lat;view.lon=lon;geoDrag=null;map.classList.remove('is-dragging');paintGeoMap();};
+  map.addEventListener('pointerup',finish);map.addEventListener('pointercancel',e=>{if(!geoDrag)return;geoDrag=null;map.classList.remove('is-dragging');layer.style.transform='';});
+  map.addEventListener('wheel',e=>{e.preventDefault();setGeoZoom(e.deltaY<0?'in':'out');},{passive:false});
+}
+function setGeoZoom(action){
+  const config=regionalMapViews[state.region]||regionalMapViews.KZ35,view=currentGeoView();
+  if(action==='reset'){view.lat=config.lat;view.lon=config.lon;view.zoom=config.zoom;}else view.zoom=Math.max(5,Math.min(12,view.zoom+(action==='in'?1:-1)));
+  paintGeoMap();
 }
 function miniMap(){return `<div class="mini-map"><span>${t('location')}</span><svg viewBox="-5 -12 630 350" role="img" aria-label="${t('location')}: ${pname(state.region)}">${geometry.map(g=>`<path d="${safe(g.path)}" fill="${g.pcode===state.region?'#78ebd4':'#284b59'}"/>`).join('')}${cityCodes.includes(state.region)?geometry.filter(g=>g.pcode===state.region).map(g=>`<circle cx="${g.cx}" cy="${g.cy}" r="8" fill="#78ebd4"/>`).join(''):''}</svg></div>`;}
 function regionList(){return `<aside class="region-sidebar"><div class="list-heading"><h2>${t('regions')} <span>20</span></h2><p>${t('alphabetical')}</p><label class="region-search">${icon('search',17)}<input id="region-search" type="search" value="${safe(regionQuery)}" placeholder="${t('search')}" aria-label="${t('search')}" autocomplete="off"></label></div><div class="region-list" id="region-list">${sortedCodes().map(code=>{const p=profile({...state,region:code});return `<button class="region-row" data-open-region="${code}"><i style="--region-color:${color(p)}"></i><span>${pname(code)}<small>N ${nText(p)}</small></span><b>${pct(p.rate)}</b>${icon('chevron',14)}</button>`;}).join('')}</div><p class="empty-search" id="empty-search" hidden>${t('emptySearch')}</p><div class="list-footer">${icon('shield',14)}${t('demo')}</div></aside>`;}
@@ -74,7 +123,7 @@ function trendCard(){const data=trendFor(state), max=100, height=145, y=v=>175-v
 function specimenTable(){return `<article class="card table-card"><div class="card-heading"><h2>${t('allSpecimens')}</h2><p>${t('allSpecimensNote')}</p></div><div class="table-scroll"><table><thead><tr><th scope="col">${t('material')}</th><th scope="col">N</th><th scope="col">R, %</th><th scope="col">${t('ci')}</th></tr></thead><tbody>${specimensFor(state).map(p=>`<tr><th scope="row">${materialName(p.material,lang)}</th><td>${nText(p)}</td><td><b>${pct(p.rate)}</b></td><td>${ciText(p)}</td></tr>`).join('')}</tbody></table></div><p class="table-footnote">${t('noPooling')}</p></article>`;}
 function provenance(p){return `<article class="card provenance"><div class="card-heading"><h2>${icon('shield',18)}${t('passport')}</h2><p>${t('demo')}</p></div><dl>${[['source','sourceValue'],['indicator','indicatorValue'],['confidence','confidenceValue'],['dedup','dedupValue']].map(([label,value])=>`<div><dt>${t(label)}</dt><dd>${t(value)}</dd></div>`).join('')}<div><dt>${t('version')}</dt><dd>${MODEL_VERSION}</dd></div><div><dt>${t('period')}</dt><dd>${date(p.period.start)} — ${date(p.period.end)}</dd></div></dl><div class="availability"><b>${t('quality')}</b><p>${t('qualityValue')}</p></div></article>`;}
 function openInfo(){dialog.innerHTML=`<div class="dialog-heading"><div><span class="eyebrow">AMR ATLAS · KAZAKHSTAN</span><h2 id="dialog-title">${t('lawTitle')}</h2></div><button data-close aria-label="${t('close')}">×</button></div><div class="dialog-content"><p>${t('publicRule')}</p><h3>${t('methodology')}</h3><p>${t('indicatorValue')} · ${t('confidenceValue')}.</p><p>${t('precision')}</p><p>${t('euNote')} ${t('dedupValue')}</p><h3>${t('legal')}</h3><p>${t('lawPersonal')}</p><a href="https://adilet.zan.kz/rus/docs/Z1300000094" target="_blank" rel="noopener noreferrer">${t('lawLink')}</a><p>${t('lawHealth')}</p><a href="https://adilet.zan.kz/rus/docs/K2000000360" target="_blank" rel="noopener noreferrer">${t('codeLink')}</a><h3>${t('beforeLive')}</h3><p>${t('liveRule')}</p><p>${t('storage')}</p><small>${t('legalDate')}</small></div><div class="dialog-footer">${t('notClinical')}<button data-close>${t('close')}</button></div>`;dialog.showModal();}
-function navigate(region){if(!pcodes.includes(region)&&region!=='KZ')return;previewRegion=null;const changed=state.region!==region;state={...state,region};zoom=1;if(changed)writeUrl(true);render();window.scrollTo({top:0,behavior:'instant'});document.querySelector('h1').focus({preventScroll:true});announce(pname(region));}
+function navigate(region){if(!pcodes.includes(region)&&region!=='KZ')return;previewRegion=null;const changed=state.region!==region;state={...state,region};zoom=1;geoView=null;if(changed)writeUrl(true);render();window.scrollTo({top:0,behavior:'instant'});document.querySelector('h1').focus({preventScroll:true});announce(pname(region));}
 function update(patch){state=normalise({...state,...patch});writeUrl();render();announce(`${pname(state.region)} · ${organisms[state.organism].name} · ${drugName(state.drug,lang)}`);}
 async function loadMap(){mapFailed=false;mapReady=false;render();try{const res=await fetch('./regions.json',{cache:'no-cache'});if(!res.ok)throw Error('Map unavailable');const data=await res.json();if(!Array.isArray(data)||data.length!==20||new Set(data.map(g=>g.pcode)).size!==20||!data.every(g=>pcodes.includes(g.pcode)&&typeof g.path==='string'&&/^[MmLlHhVvCcSsQqTtAaZz\d\s.,+eE-]+$/.test(g.path)&&Number.isFinite(g.cx)&&Number.isFinite(g.cy)))throw Error('Invalid local geometry');geometry=data;mapReady=true;}catch{mapFailed=true;}render();}
 function bindMap(){
@@ -106,6 +155,7 @@ app.addEventListener('click',e=>{
   else if(el.dataset.language){lang=el.dataset.language;try{localStorage.setItem('atlas-preview-language',lang);}catch{}render();}
   else if(el.dataset.drug)update({drug:el.dataset.drug});
   else if(el.dataset.labels){showNames=el.dataset.labels==='names';render();}
+  else if(el.dataset.geoZoom){setGeoZoom(el.dataset.geoZoom);}
   else if(el.dataset.zoom){zoom=el.dataset.zoom==='reset'?1:Math.max(1,Math.min(3,zoom+(el.dataset.zoom==='in'?.5:-.5)));applyZoom();}
   else if(el.hasAttribute('data-retry'))loadMap();
   else if(el.id==='export'){const blob=new Blob([toCsv(exportRows(state,lang))],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`AMR-Atlas-DEMO-${state.region}-${state.organism}-${state.drug}-${state.year}.csv`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);announce(t('csvReady'));}
@@ -115,7 +165,7 @@ app.addEventListener('input',e=>{if(e.target.id==='region-search'){regionQuery=e
 app.addEventListener('pointerover',e=>{const row=e.target.closest('[data-open-region]');if(row){const shape=document.querySelector(`.territory[data-region="${row.dataset.openRegion}"]`);showTooltip(row.dataset.openRegion,shape);}});
 app.addEventListener('pointerout',e=>{if(e.target.closest('[data-open-region]'))hideTooltip();});
 dialog.addEventListener('click',e=>{if(e.target.closest('[data-close]')||e.target===dialog)dialog.close();});
-window.addEventListener('popstate',()=>{state=readState();previewRegion=null;zoom=1;render();window.scrollTo({top:0,behavior:'instant'});});
+window.addEventListener('popstate',()=>{state=readState();previewRegion=null;zoom=1;geoView=null;render();window.scrollTo({top:0,behavior:'instant'});});
 loadMap();
 
 function filterRegions(){
